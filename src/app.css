@@ -1,0 +1,110 @@
+@import 'tailwindcss';
+
+/* Custom theme for Nanobanana Studio */
+@theme {
+  /* Banana-inspired color palette */
+  --color-banana-50: #fffef5;
+  --color-banana-100: #fffde6;
+  --color-banana-200: #fff9bf;
+  --color-banana-300: #fff599;
+  --color-banana-400: #ffed4d;
+  --color-banana-500: #ffe600;
+  --color-banana-600: #e6cf00;
+  --color-banana-700: #bfac00;
+  --color-banana-800: #998a00;
+  --color-banana-900: #7d7100;
+}
+
+/* Dark mode variant */
+@variant dark (&:where(.dark, .dark *));
+
+/* Base styles */
+html {
+  @apply antialiased;
+}
+
+body {
+  @apply bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100;
+  @apply transition-colors duration-200;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  @apply w-2 h-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-gray-500;
+}
+
+/* Component utility classes */
+.btn {
+  @apply px-4 py-2 rounded-lg font-medium transition-colors;
+  @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+}
+
+.btn-primary {
+  @apply bg-banana-500 text-gray-900 hover:bg-banana-400;
+  @apply focus:ring-banana-500;
+}
+
+.btn-secondary {
+  @apply bg-gray-200 text-gray-900 hover:bg-gray-300;
+  @apply dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600;
+  @apply focus:ring-gray-500;
+}
+
+.btn-danger {
+  @apply bg-red-500 text-white hover:bg-red-600;
+  @apply focus:ring-red-500;
+}
+
+.input {
+  @apply w-full px-3 py-2 rounded-lg border;
+  @apply bg-white dark:bg-gray-800;
+  @apply border-gray-300 dark:border-gray-600;
+  @apply focus:outline-none focus:ring-2 focus:ring-banana-500 focus:border-transparent;
+  @apply placeholder-gray-400 dark:placeholder-gray-500;
+}
+
+.select {
+  @apply w-full px-3 py-2 rounded-lg border;
+  @apply bg-white dark:bg-gray-800;
+  @apply border-gray-300 dark:border-gray-600;
+  @apply focus:outline-none focus:ring-2 focus:ring-banana-500 focus:border-transparent;
+  @apply appearance-none cursor-pointer pr-10;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+}
+
+.card {
+  @apply bg-white dark:bg-gray-800 rounded-xl shadow-sm;
+  @apply border border-gray-200 dark:border-gray-700;
+}
+
+.shimmer {
+  @apply animate-pulse;
+  background: linear-gradient(90deg, #e5e7eb 25%, #d1d5db 50%, #e5e7eb 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.dark .shimmer {
+  background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+  background-size: 200% 100%;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
