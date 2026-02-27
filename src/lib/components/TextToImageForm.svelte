@@ -75,7 +75,7 @@
 <div class="card p-4 space-y-4">
 	{#if prompts.length > 0}
 		<div class="space-y-2">
-			<label class="text-sm font-medium text-gray-700 dark:text-gray-300">Prompt Queue</label>
+			<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Prompt Queue</span>
 			<div class="flex flex-wrap gap-2">
 				{#each prompts as prompt, i}
 					<div
@@ -108,8 +108,8 @@
 
 	<div class="flex flex-wrap gap-3">
 		<div class="flex-1 min-w-[120px]">
-			<label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Size</label>
-			<select bind:value={outputSize} class="select text-sm">
+			<label for="txt2img-size" class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Size</label>
+			<select id="txt2img-size" bind:value={outputSize} class="select text-sm">
 				{#each Object.entries(OUTPUT_SIZES) as [value, { label }]}
 					<option {value}>{label}</option>
 				{/each}
@@ -117,8 +117,8 @@
 		</div>
 
 		<div class="flex-1 min-w-[120px]">
-			<label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Aspect Ratio</label>
-			<select bind:value={aspectRatio} class="select text-sm">
+			<label for="txt2img-aspect" class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Aspect Ratio</label>
+			<select id="txt2img-aspect" bind:value={aspectRatio} class="select text-sm">
 				{#each Object.entries(ASPECT_RATIOS) as [value, label]}
 					<option {value}>{value} ({label})</option>
 				{/each}
@@ -126,8 +126,8 @@
 		</div>
 
 		<div class="flex-1 min-w-[120px]">
-			<label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Creativity</label>
-			<select bind:value={temperature} class="select text-sm">
+			<label for="txt2img-creativity" class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Creativity</label>
+			<select id="txt2img-creativity" bind:value={temperature} class="select text-sm">
 				{#each TEMPERATURES as temp}
 					<option value={temp}>
 						{temp === 0 ? 'Precise' : temp === 2 ? 'Creative' : temp}

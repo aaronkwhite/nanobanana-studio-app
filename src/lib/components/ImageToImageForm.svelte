@@ -147,8 +147,8 @@
 
 	<div class="flex flex-wrap gap-3">
 		<div class="flex-1 min-w-[120px]">
-			<label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Size</label>
-			<select bind:value={outputSize} class="select text-sm">
+			<label for="img2img-size" class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Size</label>
+			<select id="img2img-size" bind:value={outputSize} class="select text-sm">
 				{#each Object.entries(OUTPUT_SIZES) as [value, { label }]}
 					<option {value}>{label}</option>
 				{/each}
@@ -156,8 +156,8 @@
 		</div>
 
 		<div class="flex-1 min-w-[120px]">
-			<label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Aspect Ratio</label>
-			<select bind:value={aspectRatio} class="select text-sm">
+			<label for="img2img-aspect" class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Aspect Ratio</label>
+			<select id="img2img-aspect" bind:value={aspectRatio} class="select text-sm">
 				{#each Object.entries(ASPECT_RATIOS) as [value, label]}
 					<option {value}>{value} ({label})</option>
 				{/each}
@@ -165,8 +165,8 @@
 		</div>
 
 		<div class="flex-1 min-w-[120px]">
-			<label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Creativity</label>
-			<select bind:value={temperature} class="select text-sm">
+			<label for="img2img-creativity" class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Creativity</label>
+			<select id="img2img-creativity" bind:value={temperature} class="select text-sm">
 				{#each TEMPERATURES as temp}
 					<option value={temp}>
 						{temp === 0 ? 'Precise' : temp === 2 ? 'Creative' : temp}

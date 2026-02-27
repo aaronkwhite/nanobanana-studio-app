@@ -84,7 +84,7 @@
 				{#if activeTab === 'api'}
 					<div class="space-y-4">
 						<div>
-							<label class="block text-sm font-medium mb-2">Google Gemini API Key</label>
+							<label for="api-key-input" class="block text-sm font-medium mb-2">Google Gemini API Key</label>
 							{#if $config.has_key}
 								<div class="flex items-center gap-2">
 									<span class="input flex-1 bg-gray-100 dark:bg-gray-700">{$config.masked}</span>
@@ -93,6 +93,7 @@
 							{:else}
 								<div class="relative">
 									<input
+										id="api-key-input"
 										type={showKey ? 'text' : 'password'}
 										bind:value={apiKey}
 										placeholder="AIza..."
