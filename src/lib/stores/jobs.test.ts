@@ -175,19 +175,24 @@ describe('jobs store', () => {
 	});
 
 	describe('calculateCost', () => {
+		it('should calculate cost for 0.5K images', async () => {
+			const { calculateCost } = await import('./jobs');
+			expect(calculateCost('0.5K', 4)).toBeCloseTo(0.09);
+		});
+
 		it('should calculate cost for 1K images', async () => {
 			const { calculateCost } = await import('./jobs');
-			expect(calculateCost('1K', 5)).toBe(0.10);
+			expect(calculateCost('1K', 5)).toBeCloseTo(0.1675);
 		});
 
 		it('should calculate cost for 2K images', async () => {
 			const { calculateCost } = await import('./jobs');
-			expect(calculateCost('2K', 3)).toBeCloseTo(0.21);
+			expect(calculateCost('2K', 3)).toBeCloseTo(0.1515);
 		});
 
 		it('should calculate cost for 4K images', async () => {
 			const { calculateCost } = await import('./jobs');
-			expect(calculateCost('4K', 2)).toBe(0.24);
+			expect(calculateCost('4K', 2)).toBeCloseTo(0.151);
 		});
 
 		it('should return 0 for 0 items', async () => {
@@ -305,9 +310,10 @@ describe('jobs store', () => {
 		it('should export correct OUTPUT_SIZES', async () => {
 			const { OUTPUT_SIZES } = await import('./jobs');
 
-			expect(OUTPUT_SIZES['1K'].price).toBe(0.02);
-			expect(OUTPUT_SIZES['2K'].price).toBe(0.07);
-			expect(OUTPUT_SIZES['4K'].price).toBe(0.12);
+			expect(OUTPUT_SIZES['0.5K'].price).toBe(0.0225);
+			expect(OUTPUT_SIZES['1K'].price).toBe(0.0335);
+			expect(OUTPUT_SIZES['2K'].price).toBe(0.0505);
+			expect(OUTPUT_SIZES['4K'].price).toBe(0.0755);
 		});
 
 		it('should export correct ASPECT_RATIOS', async () => {

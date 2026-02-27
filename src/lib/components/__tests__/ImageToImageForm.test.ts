@@ -210,7 +210,7 @@ describe('ImageToImageForm component', () => {
 
 		await vi.waitFor(() => {
 			// Look for the specific format in the span
-			expect(screen.getByText(/2 images · ~\$0\.04/)).toBeInTheDocument();
+			expect(screen.getByText(/2 images · ~\$0\.07/)).toBeInTheDocument();
 		});
 	});
 

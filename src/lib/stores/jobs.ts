@@ -6,7 +6,7 @@ export interface Job {
 	status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
 	mode: 'text-to-image' | 'image-to-image';
 	prompt: string;
-	output_size: '1K' | '2K' | '4K';
+	output_size: '0.5K' | '1K' | '2K' | '4K';
 	temperature: number;
 	aspect_ratio: string;
 	batch_job_name: string | null;
@@ -35,11 +35,12 @@ export interface JobWithItems {
 	items: JobItem[];
 }
 
-// Prices per output size
+// Prices per output size (NB2 Batch API pricing)
 export const OUTPUT_SIZES = {
-	'1K': { label: '1K ($0.02)', price: 0.02 },
-	'2K': { label: '2K ($0.07)', price: 0.07 },
-	'4K': { label: '4K ($0.12)', price: 0.12 }
+	'0.5K': { label: '0.5K ($0.0225)', price: 0.0225 },
+	'1K': { label: '1K ($0.0335)', price: 0.0335 },
+	'2K': { label: '2K ($0.0505)', price: 0.0505 },
+	'4K': { label: '4K ($0.0755)', price: 0.0755 }
 } as const;
 
 export const ASPECT_RATIOS = {
@@ -47,7 +48,12 @@ export const ASPECT_RATIOS = {
 	'16:9': 'Wide',
 	'9:16': 'Portrait',
 	'4:3': 'Landscape',
-	'3:4': 'Tall'
+	'3:4': 'Tall',
+	'3:2': 'Photo',
+	'2:3': 'Photo Portrait',
+	'4:5': 'Social',
+	'5:4': 'Social Wide',
+	'21:9': 'Ultrawide'
 } as const;
 
 export const TEMPERATURES = [0, 0.5, 1, 1.5, 2] as const;

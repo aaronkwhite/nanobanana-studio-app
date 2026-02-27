@@ -55,8 +55,8 @@ describe('JobCard component', () => {
 	it('should show cost based on output size and count', () => {
 		render(JobCard, { props: { job: mockJob } });
 
-		// 3 images at 1K = $0.06
-		expect(screen.getByText('$0.06')).toBeInTheDocument();
+		// 3 images at 1K = $0.1005
+		expect(screen.getByText('$0.10')).toBeInTheDocument();
 	});
 
 	it('should show spinner for pending job', () => {
@@ -160,8 +160,8 @@ describe('JobCard component', () => {
 			}
 		});
 
-		// 2 images at 4K = $0.24
-		expect(screen.getByText('$0.24')).toBeInTheDocument();
+		// 2 images at 4K = $0.151
+		expect(screen.getByText('$0.15')).toBeInTheDocument();
 	});
 
 	it('should show temperature value', () => {

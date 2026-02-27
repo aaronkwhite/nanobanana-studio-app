@@ -12,7 +12,7 @@
 
 	let files: UploadedFile[] = $state([]);
 	let prompt = $state('');
-	let outputSize: '1K' | '2K' | '4K' = $state('1K');
+	let outputSize: '0.5K' | '1K' | '2K' | '4K' = $state('1K');
 	let aspectRatio: keyof typeof ASPECT_RATIOS = $state('1:1');
 	let temperature = $state(1);
 	let submitting = $state(false);

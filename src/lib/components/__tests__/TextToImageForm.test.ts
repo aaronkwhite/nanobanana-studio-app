@@ -47,7 +47,7 @@ describe('TextToImageForm component', () => {
 	it('should show output size options', () => {
 		render(TextToImageForm);
 		// Check for size options
-		expect(screen.getByText('1K ($0.02)')).toBeInTheDocument();
+		expect(screen.getByText('1K ($0.0335)')).toBeInTheDocument();
 	});
 
 	it('should update prompt count and cost when entering prompts', async () => {
@@ -57,7 +57,7 @@ describe('TextToImageForm component', () => {
 		await fireEvent.input(textarea, { target: { value: 'A sunset over mountains' } });
 
 		// Should show 1 image count and cost (look for the specific format in the span)
-		expect(screen.getByText(/1 image · ~\$0\.02/)).toBeInTheDocument();
+		expect(screen.getByText(/1 image · ~\$0\.03/)).toBeInTheDocument();
 	});
 
 	it('should queue prompts when pressing Enter', async () => {
@@ -173,6 +173,6 @@ describe('TextToImageForm component', () => {
 		await fireEvent.input(textarea, { target: { value: 'Prompt 2' } });
 
 		// Should show 2 images (look for the specific format in the span)
-		expect(screen.getByText(/2 images · ~\$0\.04/)).toBeInTheDocument();
+		expect(screen.getByText(/2 images · ~\$0\.07/)).toBeInTheDocument();
 	});
 });
