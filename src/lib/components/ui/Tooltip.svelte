@@ -11,8 +11,8 @@
 </script>
 
 <BitsTooltip.Provider>
-  <BitsTooltip.Root openDelay={300}>
-    <BitsTooltip.Trigger asChild>
+  <BitsTooltip.Root delayDuration={300}>
+    <BitsTooltip.Trigger>
       {@render children()}
     </BitsTooltip.Trigger>
     <BitsTooltip.Content
