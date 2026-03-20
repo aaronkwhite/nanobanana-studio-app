@@ -1,4 +1,6 @@
 <script lang="ts" generics="T extends string">
+  import { ChevronDown, Check } from 'lucide-svelte';
+
   interface Option {
     value: T;
     label: string;
@@ -14,25 +16,74 @@
 
   let { options, value = $bindable(), onchange, label, class: className = '' }: Props = $props();
 
-  function handleChange(e: Event) {
-    const target = e.target as HTMLSelectElement;
-    value = target.value as T;
-    onchange?.(target.value as T);
+  let open = $state(false);
+  let triggerEl: HTMLButtonElement | undefined = $state();
+
+  const selected = $derived(options.find((o) => o.value === value));
+
+  function toggle() {
+    open = !open;
+  }
+
+  function select(option: Option) {
+    value = option.value;
+    onchange?.(option.value);
+    open = false;
+  }
+
+  function handleKeydown(e: KeyboardEvent) {
+    if (e.key === 'Escape') {
+      open = false;
+      triggerEl?.focus();
+    }
+  }
+
+  function handleClickOutside(e: MouseEvent) {
+    if (triggerEl && !triggerEl.closest('.select-wrapper')?.contains(e.target as Node)) {
+      open = false;
+    }
   }
 </script>
 
-<div class="flex flex-col gap-1.5 {className}">
+<svelte:window onclick={handleClickOutside} onkeydown={handleKeydown} />
+
+<div class="select-wrapper relative flex flex-col gap-1.5 {className}">
   {#if label}
     <span class="text-xs font-medium text-[var(--muted)]">{label}</span>
   {/if}
-  <select
-    {value}
-    onchange={handleChange}
-    class="h-9 w-full appearance-none rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 pr-8 text-sm text-[var(--text)] transition-colors hover:border-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] cursor-pointer"
-    style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2394A3B8%22 stroke-width=%222%22><path d=%22M6 9l6 6 6-6%22/></svg>'); background-repeat: no-repeat; background-position: right 8px center; background-size: 16px;"
+  <button
+    bind:this={triggerEl}
+    type="button"
+    onclick={toggle}
+    class="flex h-9 w-full items-center justify-between rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 text-sm text-[var(--text)] transition-colors hover:border-[var(--muted)] focus:outline-none focus:border-[var(--accent)]"
+    aria-expanded={open}
+    aria-haspopup="listbox"
   >
-    {#each options as option}
-      <option value={option.value}>{option.label}</option>
-    {/each}
-  </select>
+    <span class="truncate">{selected?.label ?? 'Select...'}</span>
+    <ChevronDown size={14} class="ml-1 shrink-0 text-[var(--muted)] transition-transform {open ? 'rotate-180' : ''}" />
+  </button>
+
+  {#if open}
+    <div
+      class="absolute top-full left-0 right-0 z-50 mt-1 overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--bg)] p-1 shadow-lg"
+      role="listbox"
+    >
+      {#each options as option}
+        <button
+          type="button"
+          onclick={() => select(option)}
+          class="flex w-full items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1.5 text-sm text-[var(--text)] outline-none hover:bg-[var(--accent-subtle)] {option.value === value ? 'bg-[var(--accent-subtle)]' : ''}"
+          role="option"
+          aria-selected={option.value === value}
+        >
+          <span class="w-4 shrink-0">
+            {#if option.value === value}
+              <Check size={14} class="text-[var(--accent)]" />
+            {/if}
+          </span>
+          {option.label}
+        </button>
+      {/each}
+    </div>
+  {/if}
 </div>

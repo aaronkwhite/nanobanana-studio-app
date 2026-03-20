@@ -29,14 +29,13 @@
 <div class="glass flex flex-col gap-3 p-4">
   {@render children()}
 
-  <div class="flex items-center gap-2">
-    <Select options={sizeOptions} bind:value={outputSize} class="flex-1" />
-    <Select options={ratioOptions} bind:value={aspectRatio} class="flex-1" />
+  <div class="grid grid-cols-3 gap-2">
+    <Select options={sizeOptions} bind:value={outputSize} />
+    <Select options={ratioOptions} bind:value={aspectRatio} />
     <Select
       options={tempOptions}
       value={String(temperature)}
       onchange={(v) => { temperature = Number(v); }}
-      class="flex-1"
     />
   </div>
 
