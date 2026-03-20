@@ -265,7 +265,7 @@
       </div>
 
       <a
-        href="https://buymeacoffee.com/nanobanana"
+        href="https://buymeacoffee.com/aaronkwhite"
         target="_blank"
         class="flex items-center justify-center gap-2 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] px-4 py-3 transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent-subtle)] group"
       >
