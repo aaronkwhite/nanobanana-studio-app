@@ -1,6 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { ArrowLeft, Eye, EyeOff, Sun, Moon, Monitor, Key, Palette, SlidersHorizontal, Info, RotateCcw, ExternalLink, Heart, Coffee } from 'lucide-svelte';
+  import { open } from '@tauri-apps/plugin-shell';
+
+  function openExternal(url: string) {
+    open(url).catch(() => {
+      window.open(url, '_blank');
+    });
+  }
   import { Button, Input, Select } from '$lib/components/ui';
   import { config } from '$lib/stores/config';
   import { theme } from '$lib/stores/theme';
@@ -151,14 +158,13 @@
         {/if}
       </div>
 
-      <a
-        href="https://aistudio.google.com/apikey"
-        target="_blank"
-        class="flex items-center gap-2 text-xs text-[var(--muted)] hover:text-[var(--accent)] transition-colors"
+      <button
+        onclick={() => openExternal('https://aistudio.google.com/apikey')}
+        class="flex items-center gap-2 text-xs text-[var(--muted)] hover:text-[var(--accent)] transition-colors cursor-pointer"
       >
         <ExternalLink size={12} />
         Get an API key from Google AI Studio
-      </a>
+      </button>
     </div>
 
   <!-- Defaults -->
@@ -226,6 +232,7 @@
 
   <!-- About -->
   {:else if activeTab === 'about'}
+    <div class="flex flex-col gap-4">
     <div class="glass p-5 flex flex-col gap-4">
       <div class="flex items-center gap-3">
         <div class="flex h-10 w-10 items-center justify-center rounded-[var(--radius-lg)] bg-[var(--accent-subtle)]">
@@ -264,18 +271,18 @@
         <p class="text-xs text-[var(--muted)] mt-1">Enjoying Nanobanana Studio? Consider buying me a coffee!</p>
       </div>
 
-      <a
-        href="https://buymeacoffee.com/aaronkwhite"
-        target="_blank"
-        class="flex items-center justify-center gap-2 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] px-4 py-3 transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent-subtle)] group"
+      <button
+        onclick={() => openExternal('https://buymeacoffee.com/aaronkwhite')}
+        class="flex items-center justify-center gap-2 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] px-4 py-3 transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent-subtle)] group cursor-pointer"
       >
         <Coffee size={18} class="text-[var(--accent)] group-hover:text-[var(--accent-hover)]" />
         <span class="text-sm font-medium text-[var(--text)]">Buy Me a Coffee</span>
-      </a>
+      </button>
 
       <p class="text-xs text-[var(--muted)] text-center">
         Made with <Heart size={10} class="inline text-[var(--error)]" /> by Nanobanana
       </p>
+    </div>
     </div>
   {/if}
 </div>
