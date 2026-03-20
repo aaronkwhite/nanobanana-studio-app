@@ -6,9 +6,12 @@
   import ResultGallery from './ResultGallery.svelte';
   import { jobs } from '$lib/stores/jobs';
   import { deleteJob, getJob, retryJob } from '$lib/utils/commands';
+  import { mockMode } from '$lib/utils/mock-mode';
+  import { createMockJobItems } from '$lib/utils/mock-data';
   import { calculateCost } from '$lib/types';
   import type { Job, JobItem } from '$lib/types';
   import { celebrateBatchComplete } from '$lib/utils/confetti';
+  import { get } from 'svelte/store';
 
   interface Props {
     job: Job;
@@ -22,6 +25,7 @@
   const isActive = $derived(job.status === 'pending' || job.status === 'processing');
   const isCompleted = $derived(job.status === 'completed');
   const isFailed = $derived(job.status === 'failed');
+  const canExpand = $derived(isCompleted || (isFailed && get(mockMode)));
   const progress = $derived(job.total_items > 0 ? (job.completed_items / job.total_items) * 100 : 0);
   const cost = $derived(calculateCost(job.output_size, job.total_items));
 
@@ -33,11 +37,15 @@
   });
 
   async function toggleExpand() {
-    if (!isCompleted) return;
+    if (!canExpand) return;
     expanded = !expanded;
     if (expanded && items.length === 0) {
-      const result = await getJob(job.id);
-      items = result.items;
+      if (get(mockMode)) {
+        items = createMockJobItems(job.id);
+      } else {
+        const result = await getJob(job.id);
+        items = result.items;
+      }
     }
   }
 
@@ -67,8 +75,8 @@
 <Card class="overflow-hidden">
   <button
     onclick={toggleExpand}
-    class="flex w-full items-start gap-3 p-3 text-left {isCompleted ? 'cursor-pointer' : 'cursor-default'}"
-    disabled={!isCompleted}
+    class="flex w-full items-start gap-3 p-3 text-left {canExpand ? 'cursor-pointer' : 'cursor-default'}"
+    disabled={!canExpand}
   >
     <!-- Status icon -->
     <div class="mt-0.5 flex-shrink-0">
@@ -139,7 +147,7 @@
           {/if}
         </button>
       </Tooltip>
-      {#if isCompleted}
+      {#if canExpand}
         <ChevronDown
           size={14}
           class="text-[var(--muted)] transition-transform duration-[var(--transition-fast)] {expanded ? 'rotate-180' : ''}"

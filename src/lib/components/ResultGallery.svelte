@@ -2,6 +2,7 @@
 <script lang="ts">
   import { Download } from 'lucide-svelte';
   import { getImage } from '$lib/utils/commands';
+  import { generatePlaceholderImage } from '$lib/utils/mock-data';
   import type { JobItem } from '$lib/types';
 
   interface Props {
@@ -15,6 +16,15 @@
   $effect(() => {
     for (const item of items) {
       if (item.output_image_path && !images.has(item.id) && !loading.has(item.id)) {
+        // Handle mock placeholder images without calling Tauri
+        if (item.output_image_path.startsWith('mock://')) {
+          const hue = (parseInt(item.id.replace(/\D/g, ''), 10) || 0) * 60;
+          images = new Map(images).set(
+            item.id,
+            generatePlaceholderImage(item.input_prompt ?? 'Generated', hue),
+          );
+          continue;
+        }
         loading.add(item.id);
         getImage(item.output_image_path).then((dataUrl) => {
           images = new Map(images).set(item.id, dataUrl);

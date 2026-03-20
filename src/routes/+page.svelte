@@ -9,6 +9,8 @@
   import { createT2IJob, createI2IJob } from '$lib/utils/commands';
   import { invoke } from '@tauri-apps/api/core';
   import { settings } from '$lib/stores/settings';
+  import { mockMode } from '$lib/utils/mock-mode';
+  import { createMockJobs } from '$lib/utils/mock-data';
   import type { JobMode, UploadedFile, OutputSize, AspectRatio } from '$lib/types';
   import { get } from 'svelte/store';
 
@@ -26,9 +28,14 @@
   const itemCount = $derived(mode === 'text-to-image' ? prompts.length : i2iFiles.length);
 
   onMount(() => {
-    config.load();
-    jobs.loadJobs();
-    jobs.startPolling();
+    if (get(mockMode)) {
+      // Load mock data instead of real API calls
+      jobs.setJobs(createMockJobs());
+    } else {
+      config.load();
+      jobs.loadJobs();
+      jobs.startPolling();
+    }
 
     if (browser) {
       const stored = localStorage.getItem('nanobanana-mode');
@@ -126,3 +133,13 @@
 
   <JobList />
 </main>
+
+<!-- Dev tools: mock mode toggle -->
+<div class="fixed bottom-4 right-4 z-50">
+  <button
+    onclick={() => { mockMode.toggle(); window.location.reload(); }}
+    class="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium shadow-lg transition-colors {$mockMode ? 'bg-[var(--accent)] text-[var(--accent-text)]' : 'bg-[var(--surface)] text-[var(--muted)] border border-[var(--border)]'}"
+  >
+    {$mockMode ? 'Mock Mode' : 'Live Mode'}
+  </button>
+</div>

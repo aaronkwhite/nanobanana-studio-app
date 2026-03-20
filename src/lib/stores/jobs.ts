@@ -128,6 +128,9 @@ function createJobsStore() {
     removeJob(id: string) {
       update((jobs) => jobs.filter((j) => j.id !== id));
     },
+    setJobs(jobList: Job[]) {
+      set(jobList);
+    },
     startPolling,
     stopPolling,
   };
