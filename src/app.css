@@ -178,21 +178,11 @@ select:focus-visible,
    ============================================ */
 
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  display: none;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--muted);
+* {
+  scrollbar-width: none;
 }
 
 /* ============================================
