@@ -75,7 +75,7 @@
   --accent-hover: var(--golden-600);
   --accent-active: var(--golden-700);
   --accent-text: #ffffff;
-  --accent-subtle: var(--golden-50);
+  --accent-subtle: var(--golden-100);
 
   --glass-bg: rgba(248, 250, 252, 0.25);
   --glass-border: rgba(255, 255, 255, 0.4);
