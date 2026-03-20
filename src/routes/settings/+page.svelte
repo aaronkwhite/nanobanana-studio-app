@@ -1,8 +1,7 @@
-<!-- src/routes/settings/+page.svelte -->
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { ArrowLeft, Eye, EyeOff, Sun, Moon, Monitor } from 'lucide-svelte';
-  import { Button, Input, Select, Tabs } from '$lib/components/ui';
+  import { ArrowLeft, Eye, EyeOff, Sun, Moon, Monitor, Key, Palette, SlidersHorizontal, Info, RotateCcw, ExternalLink } from 'lucide-svelte';
+  import { Button, Input, Select } from '$lib/components/ui';
   import { config } from '$lib/stores/config';
   import { theme } from '$lib/stores/theme';
   import { settings } from '$lib/stores/settings';
@@ -16,21 +15,16 @@
   let error: string = $state('');
   let success: string = $state('');
 
-  const tabList = [
-    { value: 'api-key', label: 'API Key' },
-    { value: 'defaults', label: 'Defaults' },
-    { value: 'appearance', label: 'Appearance' },
-    { value: 'about', label: 'About' },
+  const tabs = [
+    { value: 'api-key', label: 'API Key', icon: Key },
+    { value: 'defaults', label: 'Defaults', icon: SlidersHorizontal },
+    { value: 'appearance', label: 'Appearance', icon: Palette },
+    { value: 'about', label: 'About', icon: Info },
   ];
 
   const sizeOptions = Object.entries(OUTPUT_SIZES).map(([value, { label }]) => ({ value: value as OutputSize, label }));
   const ratioOptions = Object.entries(ASPECT_RATIOS).map(([value, label]) => ({ value: value as AspectRatio, label }));
   const tempOptions = TEMPERATURES.map((t) => ({ value: String(t), label: t === 0 ? 'Precise' : t === 2 ? 'Creative' : String(t) }));
-  const themeOptions = [
-    { value: 'light' as Theme, label: 'Light' },
-    { value: 'dark' as Theme, label: 'Dark' },
-    { value: 'system' as Theme, label: 'System' },
-  ];
 
   onMount(() => {
     config.load();
@@ -67,116 +61,200 @@
   }
 </script>
 
-<div class="mx-auto max-w-2xl px-4 py-6">
-  <div class="flex items-center gap-3 mb-6">
+<!-- Settings titlebar (draggable) -->
+<div
+  data-tauri-drag-region
+  class="sticky top-0 z-40 glass border-b border-[var(--glass-border)]"
+  style="-webkit-app-region: drag;"
+>
+  <div class="flex items-center gap-3 px-4 py-2.5" style="padding-left: 86px;">
     <a
       href="/"
       class="flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--accent-subtle)] transition-colors"
       aria-label="Back"
+      style="-webkit-app-region: no-drag;"
     >
       <ArrowLeft size={18} />
     </a>
-    <h1 class="text-lg font-semibold text-[var(--text)]">Settings</h1>
+    <h1 class="text-sm font-semibold text-[var(--text)]">Settings</h1>
+  </div>
+</div>
+
+<div class="mx-auto max-w-xl px-4 py-6">
+  <!-- Tab navigation -->
+  <div class="flex gap-1 rounded-[var(--radius-lg)] bg-[var(--surface)] border border-[var(--border)] p-1 mb-6">
+    {#each tabs as tab}
+      <button
+        onclick={() => { activeTab = tab.value; }}
+        class="flex items-center gap-1.5 flex-1 justify-center rounded-[var(--radius-md)] px-3 py-1.5 text-xs font-medium transition-colors {activeTab === tab.value ? 'bg-[var(--accent)] text-[var(--accent-text)]' : 'text-[var(--muted)] hover:text-[var(--text)]'}"
+      >
+        <svelte:component this={tab.icon} size={14} />
+        {tab.label}
+      </button>
+    {/each}
   </div>
 
-  <Tabs tabs={tabList} bind:value={activeTab} class="mb-6" />
-
+  <!-- API Key -->
   {#if activeTab === 'api-key'}
-    <div class="glass p-4 flex flex-col gap-4">
-      <div>
-        <h2 class="text-sm font-semibold text-[var(--text)]">Gemini API Key</h2>
-        <p class="text-xs text-[var(--muted)] mt-1">
-          Get your API key from <a href="https://aistudio.google.com/apikey" target="_blank" class="text-[var(--accent)] hover:underline">Google AI Studio</a>
-        </p>
+    <div class="flex flex-col gap-4">
+      <div class="glass p-5 flex flex-col gap-4">
+        <div>
+          <h2 class="text-sm font-semibold text-[var(--text)]">Gemini API Key</h2>
+          <p class="text-xs text-[var(--muted)] mt-1">
+            Required for image generation. Get yours from Google AI Studio.
+          </p>
+        </div>
+
+        {#if $config.has_key}
+          <div class="flex items-center gap-3 rounded-[var(--radius-md)] bg-[var(--surface)] border border-[var(--border)] p-3">
+            <Key size={16} class="text-[var(--success)] shrink-0" />
+            <code class="flex-1 text-sm font-mono text-[var(--muted)] truncate">
+              {$config.masked}
+            </code>
+            <Button variant="ghost" size="sm" onclick={removeApiKey}>Remove</Button>
+          </div>
+        {:else}
+          <div class="flex flex-col gap-3">
+            <div class="flex gap-2">
+              <div class="flex-1 relative">
+                <input
+                  bind:value={apiKey}
+                  type={showKey ? 'text' : 'password'}
+                  placeholder="Paste your API key here"
+                  class="h-9 w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] pl-3 pr-9 text-sm text-[var(--text)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--accent)]"
+                />
+                <button
+                  onclick={() => { showKey = !showKey; }}
+                  class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--muted)] hover:text-[var(--text)]"
+                  aria-label={showKey ? 'Hide key' : 'Show key'}
+                >
+                  {#if showKey}
+                    <EyeOff size={15} />
+                  {:else}
+                    <Eye size={15} />
+                  {/if}
+                </button>
+              </div>
+              <Button onclick={saveApiKey} disabled={saving} size="md">
+                {saving ? 'Validating...' : 'Test & Save'}
+              </Button>
+            </div>
+
+            {#if error}
+              <p class="text-xs text-[var(--error)]">{error}</p>
+            {/if}
+          </div>
+        {/if}
+
+        {#if success}
+          <p class="text-xs text-[var(--success)]">{success}</p>
+        {/if}
       </div>
 
-      {#if $config.has_key}
-        <div class="flex items-center gap-3">
-          <code class="flex-1 rounded-[var(--radius-md)] bg-[var(--surface)] border border-[var(--border)] px-3 py-2 text-sm font-mono text-[var(--muted)]">
-            {$config.masked}
-          </code>
-          <Button variant="danger" size="sm" onclick={removeApiKey}>Remove</Button>
-        </div>
-      {:else}
-        <div class="flex flex-col gap-2">
-          <div class="relative">
-            <Input
-              bind:value={apiKey}
-              type={showKey ? 'text' : 'password'}
-              placeholder="Enter your Gemini API key"
-              {error}
-            />
-            <button
-              onclick={() => { showKey = !showKey; }}
-              class="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--muted)] hover:text-[var(--text)]"
-              aria-label={showKey ? 'Hide key' : 'Show key'}
-            >
-              {#if showKey}
-                <EyeOff size={16} />
-              {:else}
-                <Eye size={16} />
-              {/if}
-            </button>
-          </div>
-          <Button onclick={saveApiKey} disabled={saving} size="sm">
-            {saving ? 'Saving...' : 'Test & Save'}
-          </Button>
-        </div>
-      {/if}
-
-      {#if success}
-        <p class="text-xs text-[var(--success)]">{success}</p>
-      {/if}
+      <a
+        href="https://aistudio.google.com/apikey"
+        target="_blank"
+        class="flex items-center gap-2 text-xs text-[var(--muted)] hover:text-[var(--accent)] transition-colors"
+      >
+        <ExternalLink size={12} />
+        Get an API key from Google AI Studio
+      </a>
     </div>
+
+  <!-- Defaults -->
   {:else if activeTab === 'defaults'}
-    <div class="glass p-4 flex flex-col gap-4">
-      <h2 class="text-sm font-semibold text-[var(--text)]">Generation Defaults</h2>
-      <p class="text-xs text-[var(--muted)]">These values pre-fill new generation forms.</p>
+    <div class="glass p-5 flex flex-col gap-4">
+      <div>
+        <h2 class="text-sm font-semibold text-[var(--text)]">Generation Defaults</h2>
+        <p class="text-xs text-[var(--muted)] mt-1">Pre-fill values for new generation jobs.</p>
+      </div>
+
       <div class="flex flex-col gap-3">
         <Select
-          label="Default Output Size"
+          label="Output Size"
           options={sizeOptions}
           value={$settings.output_size}
           onchange={(v) => settings.update({ output_size: v })}
         />
         <Select
-          label="Default Aspect Ratio"
+          label="Aspect Ratio"
           options={ratioOptions}
           value={$settings.aspect_ratio}
           onchange={(v) => settings.update({ aspect_ratio: v })}
         />
         <Select
-          label="Default Temperature"
+          label="Temperature"
           options={tempOptions}
           value={String($settings.temperature)}
           onchange={(v) => settings.update({ temperature: Number(v) })}
         />
       </div>
-      <Button variant="ghost" size="sm" onclick={() => settings.reset()}>
-        Reset to defaults
-      </Button>
+
+      <div class="border-t border-[var(--border)] pt-3">
+        <Button variant="ghost" size="sm" onclick={() => settings.reset()}>
+          <RotateCcw size={14} />
+          Reset to defaults
+        </Button>
+      </div>
     </div>
+
+  <!-- Appearance -->
   {:else if activeTab === 'appearance'}
-    <div class="glass p-4 flex flex-col gap-4">
-      <h2 class="text-sm font-semibold text-[var(--text)]">Theme</h2>
-      <div class="flex gap-2">
-        {#each themeOptions as opt}
-          <Button
-            variant={$theme === opt.value ? 'primary' : 'secondary'}
-            size="sm"
+    <div class="glass p-5 flex flex-col gap-4">
+      <div>
+        <h2 class="text-sm font-semibold text-[var(--text)]">Theme</h2>
+        <p class="text-xs text-[var(--muted)] mt-1">Choose your preferred appearance.</p>
+      </div>
+
+      <div class="grid grid-cols-3 gap-2">
+        {#each [
+          { value: 'light' as Theme, label: 'Light', icon: Sun, desc: 'Bright and clean' },
+          { value: 'dark' as Theme, label: 'Dark', icon: Moon, desc: 'Easy on the eyes' },
+          { value: 'system' as Theme, label: 'System', icon: Monitor, desc: 'Match your OS' },
+        ] as opt}
+          <button
             onclick={() => theme.set(opt.value)}
+            class="flex flex-col items-center gap-2 rounded-[var(--radius-lg)] border p-4 transition-colors {$theme === opt.value ? 'border-[var(--accent)] bg-[var(--accent-subtle)]' : 'border-[var(--border)] bg-[var(--surface)] hover:border-[var(--muted)]'}"
           >
-            {#if opt.value === 'light'}<Sun size={14} />{:else if opt.value === 'dark'}<Moon size={14} />{:else}<Monitor size={14} />{/if}
-            {opt.label}
-          </Button>
+            <svelte:component this={opt.icon} size={20} class={$theme === opt.value ? 'text-[var(--accent)]' : 'text-[var(--muted)]'} />
+            <span class="text-sm font-medium text-[var(--text)]">{opt.label}</span>
+            <span class="text-xs text-[var(--muted)]">{opt.desc}</span>
+          </button>
         {/each}
       </div>
     </div>
+
+  <!-- About -->
   {:else if activeTab === 'about'}
-    <div class="glass p-4 flex flex-col gap-3">
-      <h2 class="text-sm font-semibold text-[var(--text)]">Nanobanana Studio</h2>
-      <p class="text-xs text-[var(--muted)]">Version 0.1.0</p>
-      <p class="text-sm text-[var(--text)]">Batch image generation powered by Gemini 3.1 Pro Preview.</p>
+    <div class="glass p-5 flex flex-col gap-4">
+      <div class="flex items-center gap-3">
+        <div class="flex h-10 w-10 items-center justify-center rounded-[var(--radius-lg)] bg-[var(--accent-subtle)]">
+          <span class="text-lg">🍌</span>
+        </div>
+        <div>
+          <h2 class="text-sm font-semibold text-[var(--text)]">Nanobanana Studio</h2>
+          <p class="text-xs text-[var(--muted)]">Version 0.1.0</p>
+        </div>
+      </div>
+
+      <p class="text-sm text-[var(--text)] leading-relaxed">
+        Batch image generation powered by Gemini 3.1 Pro Preview. Submit multiple prompts at once, track progress in real-time, and download results — all at 50% of the standard API cost.
+      </p>
+
+      <div class="flex flex-col gap-2 border-t border-[var(--border)] pt-3">
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-[var(--muted)]">Model</span>
+          <span class="text-[var(--text)] font-mono">gemini-3.1-pro-preview</span>
+        </div>
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-[var(--muted)]">Platform</span>
+          <span class="text-[var(--text)]">macOS (Tauri v2)</span>
+        </div>
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-[var(--muted)]">Stack</span>
+          <span class="text-[var(--text)]">SvelteKit + Bits UI + Rust</span>
+        </div>
+      </div>
     </div>
   {/if}
 </div>

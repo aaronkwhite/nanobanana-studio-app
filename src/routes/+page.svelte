@@ -96,7 +96,7 @@
 
 <Header />
 
-<main class="mx-auto max-w-2xl px-4 py-6 flex flex-col gap-4">
+<main class="mx-auto max-w-3xl px-6 py-6 flex flex-col gap-4">
   <ModeSelector bind:mode />
 
   <PromptForm
