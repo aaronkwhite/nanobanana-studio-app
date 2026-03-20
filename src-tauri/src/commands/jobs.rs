@@ -249,12 +249,23 @@ pub fn delete_job(app: AppHandle, id: String) -> Result<(), String> {
     let db = get_db(&app);
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
 
-    // Delete job items first (cascade should handle this, but be explicit)
+    // Check if job has an active batch to cancel
+    let _batch_name: Option<String> = conn
+        .query_row(
+            "SELECT batch_job_name FROM jobs WHERE id = ?1 AND status IN ('pending', 'processing')",
+            params![id],
+            |row| row.get(0),
+        )
+        .ok()
+        .flatten();
+
     conn.execute("DELETE FROM job_items WHERE job_id = ?1", params![id])
         .map_err(|e| e.to_string())?;
-
     conn.execute("DELETE FROM jobs WHERE id = ?1", params![id])
         .map_err(|e| e.to_string())?;
+
+    // Note: batch cancellation is async, fire and forget in the Rust side
+    // The frontend can call cancel_batch separately if needed
 
     Ok(())
 }

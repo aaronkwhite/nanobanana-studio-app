@@ -46,6 +46,11 @@ pub fn run() {
             commands::upload_images,
             commands::get_image,
             commands::delete_upload,
+            commands::submit_batch,
+            commands::poll_batch,
+            commands::download_results,
+            commands::cancel_batch,
+            commands::validate_api_key,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
