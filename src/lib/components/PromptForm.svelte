@@ -3,35 +3,27 @@
   import type { Snippet } from 'svelte';
   import { Select, Button } from '$lib/components/ui';
   import { config } from '$lib/stores/config';
-  import { settings } from '$lib/stores/settings';
   import { calculateCost, OUTPUT_SIZES, ASPECT_RATIOS, TEMPERATURES } from '$lib/types';
   import type { OutputSize, AspectRatio } from '$lib/types';
   import { Sparkles } from 'lucide-svelte';
-  import { get } from 'svelte/store';
 
   interface Props {
     itemCount: number;
     submitting: boolean;
     onsubmit: () => void;
     children: Snippet;
+    outputSize: OutputSize;
+    aspectRatio: AspectRatio;
+    temperature: number;
   }
 
-  let { itemCount, submitting, onsubmit, children }: Props = $props();
-
-  const defaults = get(settings);
-  let outputSize: OutputSize = $state(defaults.output_size);
-  let aspectRatio: AspectRatio = $state(defaults.aspect_ratio);
-  let temperature: number = $state(defaults.temperature);
+  let { itemCount, submitting, onsubmit, children, outputSize = $bindable(), aspectRatio = $bindable(), temperature = $bindable() }: Props = $props();
 
   const cost = $derived(calculateCost(outputSize, itemCount));
 
   const sizeOptions = Object.entries(OUTPUT_SIZES).map(([value, { label }]) => ({ value: value as OutputSize, label }));
   const ratioOptions = Object.entries(ASPECT_RATIOS).map(([value, label]) => ({ value: value as AspectRatio, label }));
   const tempOptions = TEMPERATURES.map((t) => ({ value: String(t), label: t === 0 ? 'Precise' : t === 2 ? 'Creative' : String(t) }));
-
-  export function getConfig() {
-    return { outputSize, aspectRatio, temperature };
-  }
 </script>
 
 <div class="glass flex flex-col gap-3 p-4">

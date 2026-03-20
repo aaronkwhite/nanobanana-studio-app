@@ -55,7 +55,7 @@
 >
   <Upload size={24} class="text-[var(--muted)]" />
   <div>
-    <p class="text-sm font-medium text-[var(--text)]">Drop images here or click to select</p>
+    <p class="text-sm font-medium text-[var(--text)]">Click to select images</p>
     <p class="text-xs text-[var(--muted)] mt-1">JPEG, PNG, WebP, GIF · Max 10MB each · Up to 20 files</p>
   </div>
 </button>

@@ -3,6 +3,7 @@
   import '../app.css';
   import { onMount } from 'svelte';
   import { theme } from '$lib/stores/theme';
+  import { Tooltip } from 'bits-ui';
 
   let { children } = $props();
 
@@ -16,6 +17,8 @@
   <meta name="description" content="Batch image generation powered by Gemini" />
 </svelte:head>
 
-<div class="min-h-screen">
-  {@render children()}
-</div>
+<Tooltip.Provider delayDuration={300}>
+  <div class="min-h-screen">
+    {@render children()}
+  </div>
+</Tooltip.Provider>

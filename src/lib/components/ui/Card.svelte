@@ -3,14 +3,11 @@
 
   interface Props {
     glass?: boolean;
-    expandable?: boolean;
-    expanded?: boolean;
-    ontoggle?: () => void;
     class?: string;
     children: Snippet;
   }
 
-  let { glass = true, expandable = false, expanded = $bindable(false), ontoggle, class: className = '', children }: Props = $props();
+  let { glass = true, class: className = '', children }: Props = $props();
 </script>
 
 <div

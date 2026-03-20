@@ -10,16 +10,14 @@
   let { text, children }: Props = $props();
 </script>
 
-<BitsTooltip.Provider>
-  <BitsTooltip.Root delayDuration={300}>
-    <BitsTooltip.Trigger>
-      {@render children()}
-    </BitsTooltip.Trigger>
-    <BitsTooltip.Content
-      class="z-50 rounded-[var(--radius-sm)] bg-[var(--surface)] border border-[var(--border)] px-2.5 py-1 text-xs text-[var(--text)] shadow-[var(--shadow-md)]"
-      sideOffset={4}
-    >
-      {text}
-    </BitsTooltip.Content>
-  </BitsTooltip.Root>
-</BitsTooltip.Provider>
+<BitsTooltip.Root delayDuration={300}>
+  <BitsTooltip.Trigger>
+    {@render children()}
+  </BitsTooltip.Trigger>
+  <BitsTooltip.Content
+    class="z-50 rounded-[var(--radius-sm)] bg-[var(--surface)] border border-[var(--border)] px-2.5 py-1 text-xs text-[var(--text)] shadow-[var(--shadow-md)]"
+    sideOffset={4}
+  >
+    {text}
+  </BitsTooltip.Content>
+</BitsTooltip.Root>

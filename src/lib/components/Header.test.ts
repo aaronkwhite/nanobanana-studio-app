@@ -1,15 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
-import Header from './Header.svelte';
+import HeaderTestWrapper from './HeaderTestWrapper.svelte';
 
 describe('Header', () => {
   it('renders app name', () => {
-    render(Header);
+    render(HeaderTestWrapper);
     expect(screen.getByText('Nanobanana Studio')).toBeInTheDocument();
   });
 
   it('renders settings link', () => {
-    render(Header);
+    render(HeaderTestWrapper);
     expect(screen.getByRole('link', { name: /settings/i })).toBeInTheDocument();
   });
 });

@@ -10,15 +10,27 @@
 
   let { items }: Props = $props();
   let images: Map<string, string> = $state(new Map());
+  let loading: Set<string> = new Set(); // not reactive, just a guard
 
   $effect(() => {
-    items.forEach(async (item) => {
-      if (item.output_image_path && !images.has(item.id)) {
-        const dataUrl = await getImage(item.output_image_path);
-        images = new Map(images).set(item.id, dataUrl);
+    for (const item of items) {
+      if (item.output_image_path && !images.has(item.id) && !loading.has(item.id)) {
+        loading.add(item.id);
+        getImage(item.output_image_path).then((dataUrl) => {
+          images = new Map(images).set(item.id, dataUrl);
+        }).catch((err) => {
+          console.error(`Failed to load image ${item.id}:`, err);
+        });
       }
-    });
+    }
   });
+
+  async function handleDownload(item: JobItem, dataUrl: string) {
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = `nanobanana-${item.id.slice(0, 8)}.png`;
+    link.click();
+  }
 </script>
 
 <div class="grid grid-cols-2 gap-2 p-3 pt-0">
@@ -34,6 +46,7 @@
           <div class="flex w-full items-center justify-between p-2">
             <span class="text-xs text-white truncate max-w-[70%]">{item.input_prompt ?? ''}</span>
             <button
+              onclick={() => handleDownload(item, images.get(item.id)!)}
               class="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/40"
               aria-label="Download image"
             >

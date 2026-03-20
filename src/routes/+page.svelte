@@ -6,16 +6,22 @@
   import { Textarea } from '$lib/components/ui';
   import { jobs } from '$lib/stores/jobs';
   import { config } from '$lib/stores/config';
-  import { createT2IJob, createI2IJob, retryJob } from '$lib/utils/commands';
+  import { createT2IJob, createI2IJob } from '$lib/utils/commands';
   import { invoke } from '@tauri-apps/api/core';
-  import type { JobMode, UploadedFile } from '$lib/types';
+  import { settings } from '$lib/stores/settings';
+  import type { JobMode, UploadedFile, OutputSize, AspectRatio } from '$lib/types';
+  import { get } from 'svelte/store';
 
   let mode: JobMode = $state('text-to-image');
   let prompts: string[] = $state([]);
   let i2iFiles: UploadedFile[] = $state([]);
   let i2iPrompt: string = $state('');
   let submitting: boolean = $state(false);
-  let promptFormRef: PromptForm;
+
+  const defaults = get(settings);
+  let outputSize: OutputSize = $state(defaults.output_size);
+  let aspectRatio: AspectRatio = $state(defaults.aspect_ratio);
+  let temperature: number = $state(defaults.temperature);
 
   const itemCount = $derived(mode === 'text-to-image' ? prompts.length : i2iFiles.length);
 
@@ -39,7 +45,6 @@
     submitting = true;
 
     try {
-      const { outputSize, aspectRatio, temperature } = promptFormRef.getConfig();
 
       if (mode === 'text-to-image') {
         const result = await createT2IJob({
@@ -88,7 +93,9 @@
   <ModeSelector bind:mode />
 
   <PromptForm
-    bind:this={promptFormRef}
+    bind:outputSize
+    bind:aspectRatio
+    bind:temperature
     {itemCount}
     {submitting}
     onsubmit={handleSubmit}

@@ -1,7 +1,7 @@
 <!-- src/lib/components/JobCard.svelte -->
 <script lang="ts">
   import { slide } from 'svelte/transition';
-  import { Loader, CheckCircle, XCircle, ChevronDown, Copy, Trash2, RotateCcw } from 'lucide-svelte';
+  import { Loader, CheckCircle, XCircle, ChevronDown, Copy, Trash2, RotateCcw, Ban } from 'lucide-svelte';
   import { Card, ProgressBar, Tooltip, Button } from '$lib/components/ui';
   import ResultGallery from './ResultGallery.svelte';
   import { jobs } from '$lib/stores/jobs';
@@ -41,9 +41,17 @@
     }
   }
 
+  let confirmDelete: boolean = $state(false);
+
   async function handleDelete() {
+    if (!confirmDelete) {
+      confirmDelete = true;
+      setTimeout(() => { confirmDelete = false; }, 3000);
+      return;
+    }
     await deleteJob(job.id);
     jobs.removeJob(job.id);
+    confirmDelete = false;
   }
 
   async function handleCopy() {
@@ -72,6 +80,8 @@
         <CheckCircle size={18} class="text-[var(--success)]" />
       {:else if isFailed}
         <XCircle size={18} class="text-[var(--error)]" />
+      {:else if job.status === 'cancelled'}
+        <Ban size={18} class="text-[var(--muted)]" />
       {/if}
     </div>
 
@@ -79,7 +89,7 @@
     <div class="flex-1 min-w-0">
       <p class="text-sm text-[var(--text)] line-clamp-2">{job.prompt}</p>
       <p class="text-xs text-[var(--muted)] mt-1">
-        {job.output_size} · {job.aspect_ratio} · {job.total_items} item{job.total_items !== 1 ? 's' : ''}
+        {job.output_size} · {job.aspect_ratio} · {job.temperature} · {job.total_items} item{job.total_items !== 1 ? 's' : ''}
       </p>
 
       {#if isActive && job.total_items > 0}
@@ -116,13 +126,17 @@
           <Copy size={14} />
         </button>
       </Tooltip>
-      <Tooltip text="Delete">
+      <Tooltip text={confirmDelete ? 'Click again to confirm' : 'Delete'}>
         <button
           onclick={(e) => { e.stopPropagation(); handleDelete(); }}
-          class="flex h-7 w-7 items-center justify-center rounded-[var(--radius-sm)] text-[var(--muted)] hover:text-[var(--error)] hover:bg-[rgba(239,68,68,0.1)]"
+          class="flex items-center justify-center rounded-[var(--radius-sm)] transition-all {confirmDelete ? 'h-7 px-2 bg-[rgba(239,68,68,0.15)] text-[var(--error)]' : 'h-7 w-7 text-[var(--muted)] hover:text-[var(--error)] hover:bg-[rgba(239,68,68,0.1)]'}"
           aria-label="Delete job"
         >
-          <Trash2 size={14} />
+          {#if confirmDelete}
+            <span class="text-xs font-medium">Confirm?</span>
+          {:else}
+            <Trash2 size={14} />
+          {/if}
         </button>
       </Tooltip>
       {#if isCompleted}
