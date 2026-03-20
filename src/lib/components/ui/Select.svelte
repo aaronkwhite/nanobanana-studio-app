@@ -69,10 +69,10 @@
       role="listbox"
     >
       {#each options as option}
-        <button
-          type="button"
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <div
           onclick={() => select(option)}
-          class="flex w-full items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1.5 text-sm text-[var(--text)] outline-none focus:outline-none focus:bg-[var(--accent-subtle)] hover:bg-[var(--accent-subtle)] {option.value === value ? 'bg-[var(--accent-subtle)]' : ''}"
+          class="flex items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1.5 text-sm text-[var(--text)] cursor-pointer hover:bg-[var(--accent-subtle)] {option.value === value ? 'bg-[var(--accent-subtle)]' : ''}"
           role="option"
           aria-selected={option.value === value}
         >
@@ -82,7 +82,7 @@
             {/if}
           </span>
           {option.label}
-        </button>
+        </div>
       {/each}
     </div>
   {/if}
