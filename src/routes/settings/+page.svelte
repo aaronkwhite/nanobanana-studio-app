@@ -240,7 +240,7 @@
         </div>
         <div>
           <h2 class="text-sm font-semibold text-[var(--text)]">Nanobanana Studio</h2>
-          <p class="text-xs text-[var(--muted)]">Version 0.1.0</p>
+          <p class="text-xs text-[var(--muted)]">Version 0.2.0</p>
         </div>
       </div>
 
