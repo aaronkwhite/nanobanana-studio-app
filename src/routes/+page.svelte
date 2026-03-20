@@ -6,7 +6,8 @@
   import { Textarea } from '$lib/components/ui';
   import { jobs } from '$lib/stores/jobs';
   import { config } from '$lib/stores/config';
-  import { createT2IJob, createI2IJob } from '$lib/utils/commands';
+  import { createT2IJob, createI2IJob, retryJob } from '$lib/utils/commands';
+  import { invoke } from '@tauri-apps/api/core';
   import type { JobMode, UploadedFile } from '$lib/types';
 
   let mode: JobMode = $state('text-to-image');
@@ -48,6 +49,10 @@
           aspect_ratio: aspectRatio,
         });
         jobs.addJob(result.job);
+        invoke('submit_batch', { jobId: result.job.id }).catch((err) => {
+          console.error('Failed to submit batch:', err);
+          jobs.updateJob({ ...result.job, status: 'failed' });
+        });
         prompts = [];
       } else {
         const result = await createI2IJob({
@@ -58,6 +63,10 @@
           aspect_ratio: aspectRatio,
         });
         jobs.addJob(result.job);
+        invoke('submit_batch', { jobId: result.job.id }).catch((err) => {
+          console.error('Failed to submit batch:', err);
+          jobs.updateJob({ ...result.job, status: 'failed' });
+        });
         i2iFiles = [];
         i2iPrompt = '';
       }
