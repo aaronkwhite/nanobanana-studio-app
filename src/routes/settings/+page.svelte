@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { ArrowLeft, Eye, EyeOff, Sun, Moon, Monitor, Key, Palette, SlidersHorizontal, Info, RotateCcw, ExternalLink } from 'lucide-svelte';
+  import { ArrowLeft, Eye, EyeOff, Sun, Moon, Monitor, Key, Palette, SlidersHorizontal, Info, RotateCcw, ExternalLink, Heart, Coffee } from 'lucide-svelte';
   import { Button, Input, Select } from '$lib/components/ui';
   import { config } from '$lib/stores/config';
   import { theme } from '$lib/stores/theme';
@@ -255,6 +255,27 @@
           <span class="text-[var(--text)]">SvelteKit + Bits UI + Rust</span>
         </div>
       </div>
+    </div>
+
+    <!-- Support -->
+    <div class="glass p-5 flex flex-col gap-4">
+      <div>
+        <h2 class="text-sm font-semibold text-[var(--text)]">Support the Project</h2>
+        <p class="text-xs text-[var(--muted)] mt-1">Enjoying Nanobanana Studio? Consider buying me a coffee!</p>
+      </div>
+
+      <a
+        href="https://buymeacoffee.com/nanobanana"
+        target="_blank"
+        class="flex items-center justify-center gap-2 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] px-4 py-3 transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent-subtle)] group"
+      >
+        <Coffee size={18} class="text-[var(--accent)] group-hover:text-[var(--accent-hover)]" />
+        <span class="text-sm font-medium text-[var(--text)]">Buy Me a Coffee</span>
+      </a>
+
+      <p class="text-xs text-[var(--muted)] text-center">
+        Made with <Heart size={10} class="inline text-[var(--error)]" /> by Nanobanana
+      </p>
     </div>
   {/if}
 </div>
