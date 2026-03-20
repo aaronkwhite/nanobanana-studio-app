@@ -286,7 +286,7 @@
 
     <!-- Legal -->
     <div class="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-2">
-      <h3 class="text-xs font-semibold text-[var(--muted)] uppercase tracking-wide">Legal</h3>
+      <h3 class="text-xs font-semibold text-[var(--muted)] uppercase tracking-wide">The Fine Print</h3>
       <p class="text-xs text-[var(--muted)] leading-relaxed">
         Nanobanana Studio is an independent product created by Aaron K. White. It is not affiliated with, endorsed by, sponsored by, or in any way officially connected with Google LLC, Alphabet Inc., or any of their subsidiaries or affiliates.
       </p>
