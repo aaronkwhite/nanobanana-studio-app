@@ -11,25 +11,23 @@
 
 <header
   data-tauri-drag-region
-  class="glass sticky top-0 z-40 border-b border-[var(--glass-border)]"
+  class="glass sticky top-0 z-40 border-b border-[var(--glass-border)] titlebar"
 >
   <!-- Top row: centered title with traffic light space -->
-  <div class="flex items-center justify-between px-4 py-2.5">
+  <div data-tauri-drag-region class="flex items-center justify-between px-4 py-2.5">
     <!-- Left spacer for traffic lights (86px) -->
     <div class="shrink-0" style="width: 86px;"></div>
 
     <!-- Center: title + badges -->
-    <div class="flex items-center gap-2">
-      <a href="/" class="text-sm font-semibold text-[var(--text)] no-underline">
-        Nanobanana Studio
-      </a>
+    <div data-tauri-drag-region class="flex items-center gap-2">
+      <span class="text-sm font-semibold text-[var(--text)]">Nanobanana Studio</span>
       {#if $activeJobsCount > 0}
         <Badge variant="accent">{$activeJobsCount} active</Badge>
       {/if}
     </div>
 
-    <!-- Right: actions -->
-    <div class="flex items-center gap-1.5">
+    <!-- Right: actions (no-drag so buttons work) -->
+    <div class="flex items-center gap-1.5 no-drag">
       <Tooltip text="Toggle theme">
         <button
           onclick={() => theme.toggle()}
@@ -53,10 +51,19 @@
 
   <!-- API key warning banner -->
   {#if !$config.has_key}
-    <div class="flex items-center justify-center gap-2 border-t border-[var(--glass-border)] bg-[var(--warning)]/10 px-4 py-1.5">
+    <div class="flex items-center justify-center gap-2 border-t border-[var(--glass-border)] bg-[var(--warning)]/10 px-4 py-1.5 no-drag">
       <Key size={14} class="text-[var(--warning)]" />
       <span class="text-xs font-medium text-[var(--warning)]">No API key configured</span>
       <a href="/settings" class="text-xs font-medium text-[var(--accent)] hover:underline">Add key →</a>
     </div>
   {/if}
 </header>
+
+<style>
+  .titlebar {
+    -webkit-app-region: drag;
+  }
+  .no-drag {
+    -webkit-app-region: no-drag;
+  }
+</style>
