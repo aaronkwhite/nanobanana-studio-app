@@ -280,7 +280,21 @@
       </button>
 
       <p class="text-xs text-[var(--muted)] text-center">
-        Made with <Heart size={10} class="inline text-[var(--error)]" /> by Nanobanana
+        Made with <Heart size={10} class="inline text-[var(--error)]" /> by Aaron K. White
+      </p>
+    </div>
+
+    <!-- Legal -->
+    <div class="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-2">
+      <h3 class="text-xs font-semibold text-[var(--muted)] uppercase tracking-wide">Legal</h3>
+      <p class="text-xs text-[var(--muted)] leading-relaxed">
+        Nanobanana Studio is an independent product created by Aaron K. White. It is not affiliated with, endorsed by, sponsored by, or in any way officially connected with Google LLC, Alphabet Inc., or any of their subsidiaries or affiliates.
+      </p>
+      <p class="text-xs text-[var(--muted)] leading-relaxed">
+        Google, Gemini, and Google AI Studio are trademarks or registered trademarks of Google LLC. This application uses the Google Gemini API under Google's standard API Terms of Service. All generated content is subject to Google's usage policies.
+      </p>
+      <p class="text-xs text-[var(--muted)] leading-relaxed">
+        Image generation results are produced by Google's Gemini model. The developer of this application makes no guarantees regarding output quality, availability, or content safety. Users are responsible for their use of generated content and compliance with applicable laws.
       </p>
     </div>
     </div>
