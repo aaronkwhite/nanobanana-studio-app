@@ -80,7 +80,7 @@
   </div>
 </div>
 
-<div class="mx-auto max-w-xl px-4 py-6">
+<div class="mx-auto w-full max-w-xl px-6 py-6">
   <!-- Tab navigation -->
   <div class="flex gap-1 rounded-[var(--radius-lg)] bg-[var(--surface)] border border-[var(--border)] p-1 mb-6">
     {#each tabs as tab}
