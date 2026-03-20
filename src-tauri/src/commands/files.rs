@@ -8,6 +8,11 @@ const ALLOWED_EXTENSIONS: &[&str] = &["jpg", "jpeg", "png", "webp", "gif"];
 
 #[tauri::command]
 pub fn upload_images(app: AppHandle, files: Vec<String>) -> Result<Vec<UploadedFile>, String> {
+    // Enforce max 20 files before processing
+    if files.len() > 20 {
+        return Err("Maximum 20 files allowed per batch".to_string());
+    }
+
     let app_data_dir = app
         .path()
         .app_data_dir()
@@ -67,20 +72,23 @@ pub fn upload_images(app: AppHandle, files: Vec<String>) -> Result<Vec<UploadedF
         });
     }
 
-    // Enforce max 20 files
-    if uploaded.len() > 20 {
-        return Err("Maximum 20 files allowed per batch".to_string());
-    }
-
     Ok(uploaded)
 }
 
 #[tauri::command]
-pub fn get_image(_app: AppHandle, path: String) -> Result<String, String> {
+pub fn get_image(app: AppHandle, path: String) -> Result<String, String> {
     let path = PathBuf::from(&path);
 
     if !path.exists() {
         return Err(format!("Image not found: {}", path.display()));
+    }
+
+    // Validate path is within allowed directories
+    let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let canonical = path.canonicalize().map_err(|e| e.to_string())?;
+    let allowed = [app_data_dir.join("uploads"), app_data_dir.join("results")];
+    if !allowed.iter().any(|d| canonical.starts_with(d)) {
+        return Err("Access denied: path outside allowed directories".to_string());
     }
 
     // Read file and encode as base64
@@ -115,8 +123,10 @@ pub fn delete_upload(app: AppHandle, path: String) -> Result<(), String> {
 
     let file_path = PathBuf::from(&path);
 
-    // Security: only allow deleting files in uploads directory
-    if !file_path.starts_with(&uploads_dir) {
+    // Security: canonicalize both paths to prevent symlink bypass
+    let canonical_uploads = uploads_dir.canonicalize().map_err(|e| e.to_string())?;
+    let canonical_path = file_path.canonicalize().map_err(|e| e.to_string())?;
+    if !canonical_path.starts_with(&canonical_uploads) {
         return Err("Cannot delete files outside uploads directory".to_string());
     }
 

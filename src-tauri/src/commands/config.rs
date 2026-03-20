@@ -38,11 +38,6 @@ pub fn get_config(app: AppHandle) -> Result<ConfigStatus, String> {
 
 #[tauri::command]
 pub fn save_config(app: AppHandle, api_key: String) -> Result<(), String> {
-    // Validate Gemini API key format (should start with 'AI')
-    if !api_key.starts_with("AI") {
-        return Err("Invalid API key format. Gemini API keys start with 'AI'.".to_string());
-    }
-
     let db = get_db(&app);
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
 

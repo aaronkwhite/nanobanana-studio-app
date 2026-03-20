@@ -35,41 +35,13 @@ pub async fn submit_batch(app: AppHandle, job_id: String) -> Result<(), String> 
     let (mode, temperature, prompt, output_size, aspect_ratio, items) = {
         let db = get_db(&app);
         let conn = db.conn.lock().map_err(|e| e.to_string())?;
-        let mode: String = conn
-            .query_row("SELECT mode FROM jobs WHERE id = ?1", params![job_id], |row| {
-                row.get(0)
-            })
-            .map_err(|e| e.to_string())?;
 
-        let temperature: f64 = conn
+        // Consolidate 4 queries into 1
+        let (mode, temperature, prompt, output_size, aspect_ratio): (String, f64, String, String, String) = conn
             .query_row(
-                "SELECT temperature FROM jobs WHERE id = ?1",
+                "SELECT mode, temperature, prompt, output_size, aspect_ratio FROM jobs WHERE id = ?1",
                 params![job_id],
-                |row| row.get(0),
-            )
-            .map_err(|e| e.to_string())?;
-
-        let prompt: String = conn
-            .query_row(
-                "SELECT prompt FROM jobs WHERE id = ?1",
-                params![job_id],
-                |row| row.get(0),
-            )
-            .map_err(|e| e.to_string())?;
-
-        let output_size: String = conn
-            .query_row(
-                "SELECT output_size FROM jobs WHERE id = ?1",
-                params![job_id],
-                |row| row.get(0),
-            )
-            .map_err(|e| e.to_string())?;
-
-        let aspect_ratio: String = conn
-            .query_row(
-                "SELECT aspect_ratio FROM jobs WHERE id = ?1",
-                params![job_id],
-                |row| row.get(0),
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?)),
             )
             .map_err(|e| e.to_string())?;
 
@@ -86,8 +58,8 @@ pub async fn submit_batch(app: AppHandle, job_id: String) -> Result<(), String> 
                 ))
             })
             .map_err(|e| e.to_string())?
-            .filter_map(|r| r.ok())
-            .collect();
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| e.to_string())?;
 
         (mode, temperature, prompt, output_size, aspect_ratio, items)
     }; // lock dropped here
@@ -147,6 +119,7 @@ pub async fn submit_batch(app: AppHandle, job_id: String) -> Result<(), String> 
 
     let jsonl_content = jsonl_lines.join("\n");
     let temp_dir = app_data_dir.join("temp");
+    fs::create_dir_all(&temp_dir).map_err(|e| format!("Failed to create temp dir: {}", e))?;
     let jsonl_path = temp_dir.join(format!("batch-{}-{}.jsonl", mode, chrono::Utc::now().timestamp()));
     fs::write(&jsonl_path, &jsonl_content).map_err(|e| format!("Failed to write JSONL: {}", e))?;
 
@@ -167,6 +140,12 @@ pub async fn submit_batch(app: AppHandle, job_id: String) -> Result<(), String> 
         .await
         .map_err(|e| format!("Upload init failed: {}", e))?;
 
+    if !init_resp.status().is_success() {
+        let status = init_resp.status();
+        let body = init_resp.text().await.unwrap_or_default();
+        return Err(format!("API request failed ({}): {}", status, body));
+    }
+
     let upload_url = init_resp
         .headers()
         .get("x-goog-upload-url")
@@ -185,6 +164,12 @@ pub async fn submit_batch(app: AppHandle, job_id: String) -> Result<(), String> 
         .send()
         .await
         .map_err(|e| format!("Upload failed: {}", e))?;
+
+    if !upload_resp.status().is_success() {
+        let status = upload_resp.status();
+        let body = upload_resp.text().await.unwrap_or_default();
+        return Err(format!("API request failed ({}): {}", status, body));
+    }
 
     let upload_result: Value = upload_resp.json().await.map_err(|e| e.to_string())?;
     let file_name = upload_result["file"]["name"]
@@ -214,6 +199,12 @@ pub async fn submit_batch(app: AppHandle, job_id: String) -> Result<(), String> 
         .await
         .map_err(|e| format!("Batch submit failed: {}", e))?;
 
+    if !batch_resp.status().is_success() {
+        let status = batch_resp.status();
+        let body = batch_resp.text().await.unwrap_or_default();
+        return Err(format!("API request failed ({}): {}", status, body));
+    }
+
     let batch_result: Value = batch_resp.json().await.map_err(|e| e.to_string())?;
     let batch_name = batch_result["name"]
         .as_str()
@@ -241,6 +232,11 @@ pub async fn submit_batch(app: AppHandle, job_id: String) -> Result<(), String> 
 
 #[tauri::command]
 pub async fn poll_batch(app: AppHandle, batch_name: String) -> Result<BatchStatus, String> {
+    // Validate batch_name to prevent SSRF
+    if !batch_name.starts_with("batches/") || batch_name.contains("..") || batch_name.contains("://") {
+        return Err("Invalid batch name format".to_string());
+    }
+
     let api_key = get_api_key(&app)?;
     let client = Client::new();
 
@@ -250,6 +246,12 @@ pub async fn poll_batch(app: AppHandle, batch_name: String) -> Result<BatchStatu
         .send()
         .await
         .map_err(|e| format!("Poll failed: {}", e))?;
+
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let body = resp.text().await.unwrap_or_default();
+        return Err(format!("API request failed ({}): {}", status, body));
+    }
 
     let result: Value = resp.json().await.map_err(|e| e.to_string())?;
 
@@ -270,6 +272,11 @@ pub async fn download_results(
     batch_name: String,
     job_id: String,
 ) -> Result<(), String> {
+    // Validate batch_name to prevent SSRF
+    if !batch_name.starts_with("batches/") || batch_name.contains("..") || batch_name.contains("://") {
+        return Err("Invalid batch name format".to_string());
+    }
+
     let api_key = get_api_key(&app)?;
     let app_data_dir = get_app_data_dir(&app)?;
     let client = Client::new();
@@ -281,6 +288,12 @@ pub async fn download_results(
         .send()
         .await
         .map_err(|e| e.to_string())?;
+
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let body = resp.text().await.unwrap_or_default();
+        return Err(format!("API request failed ({}): {}", status, body));
+    }
 
     let batch: Value = resp.json().await.map_err(|e| e.to_string())?;
     let result_file = batch["dest"]["fileName"]
@@ -298,8 +311,15 @@ pub async fn download_results(
         .await
         .map_err(|e| e.to_string())?;
 
+    if !result_resp.status().is_success() {
+        let status = result_resp.status();
+        let body = result_resp.text().await.unwrap_or_default();
+        return Err(format!("API request failed ({}): {}", status, body));
+    }
+
     let result_text = result_resp.text().await.map_err(|e| e.to_string())?;
     let results_dir = app_data_dir.join("results");
+    fs::create_dir_all(&results_dir).map_err(|e| format!("Failed to create results dir: {}", e))?;
     let now = chrono::Utc::now().to_rfc3339();
 
     let mut completed = 0i32;
@@ -399,20 +419,50 @@ pub async fn download_results(
         .map_err(|e| e.to_string())?;
     }
 
+    // Clean up temp JSONL file
+    {
+        let db = get_db(&app);
+        let conn = db.conn.lock().map_err(|e| e.to_string())?;
+        let temp_file: Option<String> = conn.query_row(
+            "SELECT batch_temp_file FROM jobs WHERE id = ?1",
+            params![job_id],
+            |row| row.get(0),
+        ).ok().flatten();
+        if let Some(path) = temp_file {
+            let _ = fs::remove_file(&path);
+        }
+    }
+
     Ok(())
 }
 
 #[tauri::command]
 pub async fn cancel_batch(app: AppHandle, batch_name: String) -> Result<(), String> {
+    // Validate batch_name
+    if !batch_name.starts_with("batches/") || batch_name.contains("..") {
+        return Err("Invalid batch name format".to_string());
+    }
+
     let api_key = get_api_key(&app)?;
     let client = Client::new();
 
-    client
+    let _resp = client
         .post(format!("{}/v1beta/{}:cancel", GEMINI_BASE, batch_name))
         .header("x-goog-api-key", &api_key)
         .send()
         .await
         .map_err(|e| format!("Cancel failed: {}", e))?;
+    // Don't require success — batch may already be done
+
+    // Update job status in DB
+    {
+        let db = get_db(&app);
+        let conn = db.conn.lock().map_err(|e| e.to_string())?;
+        conn.execute(
+            "UPDATE jobs SET status = 'cancelled', updated_at = ?1 WHERE batch_job_name = ?2 AND status IN ('pending', 'processing')",
+            params![chrono::Utc::now().to_rfc3339(), batch_name],
+        ).map_err(|e| e.to_string())?;
+    }
 
     Ok(())
 }

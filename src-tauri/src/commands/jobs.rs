@@ -1,7 +1,7 @@
 use crate::db::get_db;
 use crate::models::{CreateI2IJobRequest, CreateT2IJobRequest, Job, JobItem, JobWithItems};
 use rusqlite::params;
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 use uuid::Uuid;
 
 #[tauri::command]
@@ -181,6 +181,17 @@ pub fn create_t2i_job(app: AppHandle, request: CreateT2IJobRequest) -> Result<Jo
 
 #[tauri::command]
 pub fn create_i2i_job(app: AppHandle, request: CreateI2IJobRequest) -> Result<JobWithItems, String> {
+    // Validate image paths are within uploads directory
+    let uploads_dir = app.path().app_data_dir().map_err(|e| e.to_string())?.join("uploads");
+    for image_path in &request.image_paths {
+        let canonical = std::path::Path::new(image_path)
+            .canonicalize()
+            .map_err(|_| format!("Image not found: {}", image_path))?;
+        if !canonical.starts_with(&uploads_dir) {
+            return Err("Image paths must be within the uploads directory".to_string());
+        }
+    }
+
     let db = get_db(&app);
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
 
@@ -245,27 +256,31 @@ pub fn create_i2i_job(app: AppHandle, request: CreateI2IJobRequest) -> Result<Jo
 }
 
 #[tauri::command]
-pub fn delete_job(app: AppHandle, id: String) -> Result<(), String> {
-    let db = get_db(&app);
-    let conn = db.conn.lock().map_err(|e| e.to_string())?;
-
-    // Check if job has an active batch to cancel
-    let _batch_name: Option<String> = conn
-        .query_row(
+pub async fn delete_job(app: AppHandle, id: String) -> Result<(), String> {
+    let batch_name: Option<String> = {
+        let db = get_db(&app);
+        let conn = db.conn.lock().map_err(|e| e.to_string())?;
+        conn.query_row(
             "SELECT batch_job_name FROM jobs WHERE id = ?1 AND status IN ('pending', 'processing')",
             params![id],
             |row| row.get(0),
         )
         .ok()
-        .flatten();
+        .flatten()
+    };
 
+    // Cancel batch if active (fire-and-forget)
+    if let Some(ref name) = batch_name {
+        let _ = super::batch::cancel_batch(app.clone(), name.clone()).await;
+    }
+
+    // Delete from DB
+    let db = get_db(&app);
+    let conn = db.conn.lock().map_err(|e| e.to_string())?;
     conn.execute("DELETE FROM job_items WHERE job_id = ?1", params![id])
         .map_err(|e| e.to_string())?;
     conn.execute("DELETE FROM jobs WHERE id = ?1", params![id])
         .map_err(|e| e.to_string())?;
-
-    // Note: batch cancellation is async, fire and forget in the Rust side
-    // The frontend can call cancel_batch separately if needed
 
     Ok(())
 }
