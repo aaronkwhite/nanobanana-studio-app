@@ -72,7 +72,7 @@
         <button
           type="button"
           onclick={() => select(option)}
-          class="flex w-full items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1.5 text-sm text-[var(--text)] outline-none hover:bg-[var(--accent-subtle)] {option.value === value ? 'bg-[var(--accent-subtle)]' : ''}"
+          class="flex w-full items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1.5 text-sm text-[var(--text)] outline-none focus:outline-none focus:bg-[var(--accent-subtle)] hover:bg-[var(--accent-subtle)] {option.value === value ? 'bg-[var(--accent-subtle)]' : ''}"
           role="option"
           aria-selected={option.value === value}
         >
