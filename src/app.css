@@ -113,6 +113,10 @@
    BASE STYLES
    ============================================ */
 
+html, body {
+  overscroll-behavior: none;
+}
+
 html {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
