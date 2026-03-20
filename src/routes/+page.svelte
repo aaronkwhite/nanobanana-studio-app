@@ -8,6 +8,7 @@
   import { config } from '$lib/stores/config';
   import { createT2IJob, createI2IJob } from '$lib/utils/commands';
   import { invoke } from '@tauri-apps/api/core';
+  import { dev } from '$app/environment';
   import { settings } from '$lib/stores/settings';
   import { mockMode } from '$lib/utils/mock-mode';
   import { createMockJobs } from '$lib/utils/mock-data';
@@ -134,7 +135,8 @@
   <JobList />
 </main>
 
-<!-- Dev tools: mock mode toggle -->
+{#if dev}
+<!-- Dev tools: mock mode toggle (only visible in development) -->
 <div class="fixed bottom-4 right-4 z-50">
   <button
     onclick={() => { mockMode.toggle(); window.location.reload(); }}
@@ -143,3 +145,4 @@
     {$mockMode ? 'Mock Mode' : 'Live Mode'}
   </button>
 </div>
+{/if}
