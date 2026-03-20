@@ -9,7 +9,10 @@
   const ThemeIcon = $derived(themeIcons[$theme]);
 </script>
 
-<header class="glass sticky top-0 z-40 flex items-center justify-between px-4 py-2.5 border-b border-[var(--glass-border)]">
+<header
+  data-tauri-drag-region
+  class="glass sticky top-0 z-40 flex items-center justify-between pl-20 pr-4 py-2.5 border-b border-[var(--glass-border)]"
+>
   <div class="flex items-center gap-3">
     <a href="/" class="flex items-center gap-2 text-[var(--text)] no-underline">
       <span class="text-sm font-semibold">Nanobanana Studio</span>
