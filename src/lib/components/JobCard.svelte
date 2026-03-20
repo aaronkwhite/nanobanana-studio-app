@@ -62,8 +62,24 @@
     confirmDelete = false;
   }
 
+  let copied = $state(false);
+
   async function handleCopy() {
-    await navigator.clipboard.writeText(job.prompt);
+    try {
+      await navigator.clipboard.writeText(job.prompt);
+    } catch {
+      // Fallback for Tauri webview where clipboard API may be restricted
+      const textarea = document.createElement('textarea');
+      textarea.value = job.prompt;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    }
+    copied = true;
+    setTimeout(() => { copied = false; }, 1500);
   }
 
   async function handleRetry() {
@@ -125,13 +141,17 @@
           </button>
         </Tooltip>
       {/if}
-      <Tooltip text="Copy prompt">
+      <Tooltip text={copied ? 'Copied!' : 'Copy prompt'}>
         <button
           onclick={(e) => { e.stopPropagation(); handleCopy(); }}
-          class="flex h-7 w-7 items-center justify-center rounded-[var(--radius-sm)] text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--accent-subtle)]"
+          class="flex h-7 w-7 items-center justify-center rounded-[var(--radius-sm)] transition-colors {copied ? 'text-[var(--success)]' : 'text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--accent-subtle)]'}"
           aria-label="Copy prompt"
         >
-          <Copy size={14} />
+          {#if copied}
+            <CheckCircle size={14} />
+          {:else}
+            <Copy size={14} />
+          {/if}
         </button>
       </Tooltip>
       <Tooltip text={confirmDelete ? 'Click again to confirm' : 'Delete'}>
