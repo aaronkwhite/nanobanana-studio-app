@@ -71,15 +71,13 @@
 <!-- Settings titlebar (draggable) -->
 <div
   data-tauri-drag-region
-  class="sticky top-0 z-40 glass border-b border-[var(--glass-border)]"
-  style="-webkit-app-region: drag;"
+  class="sticky top-0 z-40 glass border-b border-[var(--glass-border)] titlebar"
 >
-  <div class="flex items-center gap-3 px-4 py-2.5" style="padding-left: 86px;">
+  <div data-tauri-drag-region class="flex items-center gap-3 px-4 py-2.5" style="padding-left: 86px;">
     <a
       href="/"
-      class="flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--accent-subtle)] transition-colors"
+      class="flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--accent-subtle)] transition-colors no-drag"
       aria-label="Back"
-      style="-webkit-app-region: no-drag;"
     >
       <ArrowLeft size={18} />
     </a>
@@ -300,3 +298,12 @@
     </div>
   {/if}
 </div>
+
+<style>
+  .titlebar {
+    -webkit-app-region: drag;
+  }
+  .no-drag {
+    -webkit-app-region: no-drag;
+  }
+</style>
