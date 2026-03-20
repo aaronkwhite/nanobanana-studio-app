@@ -72,7 +72,7 @@
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <div
           onclick={() => select(option)}
-          class="flex items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1.5 text-sm text-[var(--text)] cursor-pointer hover:bg-[var(--accent-subtle)] {option.value === value ? 'bg-[var(--accent-subtle)]' : ''}"
+          class="flex items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1.5 text-sm text-[var(--text)] cursor-pointer hover:bg-[var(--border)] {option.value === value ? 'bg-[var(--accent-subtle)]' : ''}"
           role="option"
           aria-selected={option.value === value}
         >
