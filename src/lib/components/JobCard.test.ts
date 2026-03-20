@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 import { invoke } from '@tauri-apps/api/core';
-import JobCard from './JobCard.svelte';
+import JobCardTestWrapper from './JobCardTestWrapper.svelte';
 
 const mockJob = {
   id: 'test-1',
@@ -23,12 +23,12 @@ const mockJob = {
 
 describe('JobCard', () => {
   it('renders job prompt', () => {
-    render(JobCard, { props: { job: mockJob } });
+    render(JobCardTestWrapper, { props: { job: mockJob } });
     expect(screen.getByText('A beautiful sunset')).toBeInTheDocument();
   });
 
-  it('shows completed status', () => {
-    render(JobCard, { props: { job: mockJob } });
-    expect(screen.getByText('1K · 16:9 · 2 items')).toBeInTheDocument();
+  it('shows completed status with temperature', () => {
+    render(JobCardTestWrapper, { props: { job: mockJob } });
+    expect(screen.getByText('1K · 16:9 · 1 · 2 items')).toBeInTheDocument();
   });
 });

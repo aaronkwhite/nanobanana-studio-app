@@ -13,7 +13,6 @@ const mockJob: Job = {
   temperature: 1,
   aspect_ratio: '1:1',
   batch_job_name: null,
-  batch_temp_file: null,
   total_items: 1,
   completed_items: 0,
   failed_items: 0,

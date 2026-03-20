@@ -12,8 +12,7 @@
     {
       "identifier": "fs:scope",
       "allow": [
-        "$APPDATA/**",
-        "$TEMP/**"
+        "$APPDATA/**"
       ]
     }
   ]

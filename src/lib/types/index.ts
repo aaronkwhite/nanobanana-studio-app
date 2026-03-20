@@ -15,7 +15,6 @@ export interface Job {
   temperature: number;
   aspect_ratio: AspectRatio;
   batch_job_name: string | null;
-  batch_temp_file: string | null;
   total_items: number;
   completed_items: number;
   failed_items: number;
@@ -66,8 +65,16 @@ export interface CreateI2IJobRequest {
   aspect_ratio: AspectRatio;
 }
 
+export type GeminiBatchState =
+  | 'JOB_STATE_PENDING'
+  | 'JOB_STATE_RUNNING'
+  | 'JOB_STATE_SUCCEEDED'
+  | 'JOB_STATE_FAILED'
+  | 'JOB_STATE_CANCELLED'
+  | 'JOB_STATE_EXPIRED';
+
 export interface BatchStatus {
-  state: string;
+  state: GeminiBatchState;
   total_requests: number;
   completed_requests: number;
   failed_requests: number;

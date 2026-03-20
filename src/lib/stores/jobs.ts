@@ -1,11 +1,12 @@
 // src/lib/stores/jobs.ts
 import { writable, derived } from 'svelte/store';
-import type { Job, JobWithItems, BatchStatus } from '$lib/types';
+import type { Job, JobWithItems, BatchStatus, GeminiBatchState } from '$lib/types';
 import * as cmd from '$lib/utils/commands';
 
 function createJobsStore() {
   const { subscribe, set, update } = writable<Job[]>([]);
-  let pollInterval: ReturnType<typeof setInterval> | null = null;
+  let pollTimeout: ReturnType<typeof setTimeout> | null = null;
+  let isPolling = false;
 
   async function pollActiveJobs() {
     let currentJobs: Job[] = [];
@@ -17,7 +18,7 @@ function createJobsStore() {
     );
 
     if (activeJobs.length === 0) {
-      stopPolling();
+      isPolling = false;
       return;
     }
 
@@ -27,23 +28,33 @@ function createJobsStore() {
           const batch: BatchStatus = await cmd.pollBatch(job.batch_job_name);
           const newStatus = mapBatchState(batch.state);
 
-          update((jobs) =>
-            jobs.map((j) =>
-              j.id === job.id
-                ? {
-                    ...j,
-                    status: newStatus,
-                    completed_items: batch.completed_requests,
-                    failed_items: batch.failed_requests,
-                  }
-                : j
-            )
-          );
-
           if (newStatus === 'completed' && job.batch_job_name) {
-            await cmd.downloadResults(job.batch_job_name, job.id);
-            const updated = await cmd.getJob(job.id);
-            update((jobs) => jobs.map((j) => (j.id === job.id ? updated.job : j)));
+            try {
+              await cmd.downloadResults(job.batch_job_name, job.id);
+              const updated = await cmd.getJob(job.id);
+              update((jobs) => jobs.map((j) => (j.id === job.id ? updated.job : j)));
+            } catch (err) {
+              console.error(`Failed to download results for ${job.id}:`, err);
+              update((jobs) =>
+                jobs.map((j) =>
+                  j.id === job.id ? { ...j, status: 'failed' as const } : j
+                )
+              );
+            }
+          } else {
+            // For non-completed states, update normally
+            update((jobs) =>
+              jobs.map((j) =>
+                j.id === job.id
+                  ? {
+                      ...j,
+                      status: newStatus,
+                      completed_items: batch.completed_requests,
+                      failed_items: batch.failed_requests,
+                    }
+                  : j
+              )
+            );
           }
         } else {
           const updated: JobWithItems = await cmd.getJob(job.id);
@@ -53,9 +64,23 @@ function createJobsStore() {
         console.error(`Failed to poll job ${job.id}:`, err);
       }
     }
+
+    // Schedule next poll if there are still active jobs
+    let updatedJobs: Job[] = [];
+    const unsub2 = subscribe((j) => (updatedJobs = j));
+    unsub2();
+    const hasActiveJobs = updatedJobs.some(
+      (j) => j.status === 'pending' || j.status === 'processing'
+    );
+
+    if (hasActiveJobs) {
+      pollTimeout = setTimeout(pollActiveJobs, 2000);
+    } else {
+      isPolling = false;
+    }
   }
 
-  function mapBatchState(state: string): Job['status'] {
+  function mapBatchState(state: GeminiBatchState): Job['status'] {
     switch (state) {
       case 'JOB_STATE_SUCCEEDED':
         return 'completed';
@@ -72,15 +97,17 @@ function createJobsStore() {
   }
 
   function startPolling() {
-    if (pollInterval) return;
-    pollInterval = setInterval(pollActiveJobs, 2000);
+    if (isPolling) return;
+    isPolling = true;
+    pollTimeout = setTimeout(pollActiveJobs, 2000);
   }
 
   function stopPolling() {
-    if (pollInterval) {
-      clearInterval(pollInterval);
-      pollInterval = null;
+    if (pollTimeout) {
+      clearTimeout(pollTimeout);
+      pollTimeout = null;
     }
+    isPolling = false;
   }
 
   return {

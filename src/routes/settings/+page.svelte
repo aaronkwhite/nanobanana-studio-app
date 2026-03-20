@@ -45,9 +45,14 @@
     }
     saving = true;
     try {
+      const valid = await config.validate(apiKey);
+      if (!valid) {
+        error = 'Invalid API key — could not authenticate with Gemini';
+        return;
+      }
       await config.save(apiKey);
       apiKey = '';
-      success = 'API key saved successfully';
+      success = 'API key validated and saved';
     } catch (err) {
       error = String(err);
     } finally {
