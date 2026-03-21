@@ -10,8 +10,8 @@
   const variantClasses = {
     default: 'bg-[var(--surface)] text-[var(--muted)] border border-[var(--border)]',
     accent: 'bg-[var(--accent)] text-[var(--accent-text)]',
-    success: 'bg-[var(--success)] text-white',
-    error: 'bg-[var(--error)] text-white',
+    success: 'bg-[var(--success-subtle)] text-[var(--success)] border border-[var(--success-border)]',
+    error: 'bg-[var(--error-subtle)] text-[var(--error)] border border-[var(--error-border)]',
   };
 </script>
 

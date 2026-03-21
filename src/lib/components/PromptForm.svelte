@@ -26,7 +26,7 @@
   const tempOptions = TEMPERATURES.map((t) => ({ value: String(t), label: t === 0 ? 'Precise' : t === 2 ? 'Creative' : String(t) }));
 </script>
 
-<div class="glass flex flex-col gap-3 p-4">
+<div class="glass relative z-30 flex flex-col gap-3 p-4 overflow-visible">
   {@render children()}
 
   <div class="grid grid-cols-3 gap-2">

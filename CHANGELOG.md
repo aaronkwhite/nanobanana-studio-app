@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.3.0] - 2026-03-21
+
+### Design System Overhaul — Rose Gold + Apple-Native Polish
+
+#### New Color System
+- **Rose Gold accent** replaces Golden Hour yellow — premium, distinctive, and accessible
+- Rose Gold scale: `#fdf2f8` (50) through `#702459` (800) with proper light/dark theme mapping
+- **Harmonized semantic colors** — desaturated, warm-shifted values that complement rose gold:
+  - Success: Sage Teal (`#2D9D78` light / `#5BB89A` dark)
+  - Warning: Warm Amber (`#C08A2E` light / `#D4A54A` dark)
+  - Error: Warm Vermillion (`#C93B3B` light / `#E06060` dark)
+- Each semantic color gets `-subtle` and `-border` tokens for tinted backgrounds
+- New `--accent-glow` token for interactive glow effects
+
+#### Apple-Native UI Polish
+- **Sliding pill tabs** — animated indicator slides between tabs using `translateX()` with spring easing, replacing instant accent-fill toggle. Neutral surface pill with subtle shadow, matching Linear/Raycast/macOS native segmented controls
+- **Refined buttons** — lighter weight (34px height, 13px text), whisper shadows, opacity-based hover, `translateY(0.5px)` press feedback. Secondary buttons now use translucent backgrounds instead of opaque white + border
+- **Theme-aware tab containers** — translucent backgrounds with 0.5px borders, proper dark mode pill visibility
+
+#### Component Updates
+- Badge success/error variants: tinted pill style instead of solid colored backgrounds
+- ImageDropZone: rose gold glow on drag instead of yellow
+- JobCard: uses `--error-subtle` token instead of hardcoded rgba
+- Settings heart icon: uses accent color instead of error red
+- Confetti: rose gold + silver particles
+- API key toast: clean surface background with neutral border
+- PromptForm: z-index fix for dropdown stacking over job cards
+
 ## [0.2.0] - 2026-03-19
 
 ### Complete UI Overhaul
@@ -7,7 +35,7 @@
 The entire frontend has been rebuilt from scratch with a new design system, component library, and architecture.
 
 #### Design System
-- **Moonlight Silver + Golden Hour** color palette replacing the old banana-yellow theme
+- **Moonlight Silver + Golden Hour** color palette (superseded by Rose Gold in 0.3.0)
 - **Glass morphism** effects on cards, headers, and surfaces (backdrop-filter blur + translucent backgrounds)
 - **Light and dark themes** with proper WCAG contrast — Golden Hour 300 primary in dark mode, 500 in light mode
 - **Design tokens** for colors, spacing (4px grid), border radius, shadows, typography, and transitions

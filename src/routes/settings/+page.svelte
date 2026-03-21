@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { ArrowLeft, Eye, EyeOff, Sun, Moon, Monitor, Key, Palette, SlidersHorizontal, Info, RotateCcw, ExternalLink, Heart, Coffee, FolderOpen } from 'lucide-svelte';
   import { open } from '@tauri-apps/plugin-shell';
   import { open as dialogOpen } from '@tauri-apps/plugin-dialog';
@@ -25,6 +25,22 @@
   let success: string = $state('');
   let uploadsDir: string = $state('');
   let resultsDir: string = $state('');
+  let settingsTabEls: HTMLButtonElement[] = [];
+  let settingsPillEl: HTMLDivElement | undefined = $state();
+  let settingsPillStyle = $state('');
+
+  function updateSettingsPill() {
+    const idx = tabs.findIndex(t => t.value === activeTab);
+    const el = settingsTabEls[idx];
+    if (el) {
+      settingsPillStyle = `width: ${el.offsetWidth}px; transform: translateX(${el.offsetLeft - 2}px);`;
+    }
+  }
+
+  $effect(() => {
+    void activeTab;
+    tick().then(updateSettingsPill);
+  });
 
   async function loadDirectories() {
     uploadsDir = (await cmd.getSetting('uploads_dir')) ?? '';
@@ -99,13 +115,19 @@
 
 <div class="px-6 py-6">
   <!-- Tab navigation -->
-  <div class="flex gap-1 rounded-[var(--radius-lg)] bg-[var(--surface)] border border-[var(--border)] p-1 mb-6">
-    {#each tabs as tab}
+  <div class="settings-tabs flex relative rounded-[10px] p-[2px] mb-6">
+    <div
+      class="settings-pill absolute top-[2px] h-[calc(100%-4px)] rounded-[var(--radius-md)]"
+      bind:this={settingsPillEl}
+      style="transition: transform 250ms cubic-bezier(0.22, 1, 0.36, 1), width 250ms cubic-bezier(0.22, 1, 0.36, 1); {settingsPillStyle}"
+    ></div>
+    {#each tabs as tab, i}
       <button
+        bind:this={settingsTabEls[i]}
         onclick={() => { activeTab = tab.value; }}
-        class="flex items-center gap-1.5 flex-1 justify-center rounded-[var(--radius-md)] px-3 py-1.5 text-xs font-medium transition-colors {activeTab === tab.value ? 'bg-[var(--accent)] text-[var(--accent-text)]' : 'text-[var(--muted)] hover:text-[var(--text)]'}"
+        class="relative z-[1] flex items-center gap-1.5 flex-1 justify-center rounded-[var(--radius-md)] px-3 py-[5px] text-xs cursor-pointer bg-transparent border-none font-sans tracking-tight transition-colors duration-200 {activeTab === tab.value ? 'font-medium text-[var(--text)]' : 'font-normal text-[var(--muted)] hover:text-[var(--text)]'}"
       >
-        <svelte:component this={tab.icon} size={14} />
+        <svelte:component this={tab.icon} size={13} />
         {tab.label}
       </button>
     {/each}
@@ -345,7 +367,7 @@
       </button>
 
       <p class="text-xs text-[var(--muted)] text-center">
-        Made with <Heart size={10} class="inline text-[var(--error)]" /> by Aaron K. White
+        Made with <Heart size={10} class="inline text-[var(--accent)]" /> by Aaron K. White
       </p>
     </div>
 
@@ -372,5 +394,21 @@
   }
   .no-drag {
     -webkit-app-region: no-drag;
+  }
+  .settings-tabs {
+    background: rgba(128, 128, 128, 0.08);
+    border: 0.5px solid rgba(128, 128, 128, 0.12);
+  }
+  .settings-pill {
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+  }
+  :global([data-theme="dark"]) .settings-tabs {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  :global([data-theme="dark"]) .settings-pill {
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), 0 0 0 0.5px rgba(255, 255, 255, 0.06);
   }
 </style>

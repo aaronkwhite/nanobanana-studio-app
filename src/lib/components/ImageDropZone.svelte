@@ -50,7 +50,7 @@
   ondragover={handleDragOver}
   ondragleave={handleDragLeave}
   ondrop={handleDrop}
-  class="flex flex-col items-center justify-center gap-2 rounded-[var(--radius-lg)] border-2 border-dashed border-[var(--border)] p-8 text-center transition-all duration-[var(--transition-base)] hover:border-[var(--accent)] {dragging ? 'scale-[1.02] border-[var(--accent)] shadow-[0_0_20px_rgba(252,211,77,0.3)]' : ''}"
+  class="flex flex-col items-center justify-center gap-2 rounded-[var(--radius-lg)] border-2 border-dashed border-[var(--border)] p-8 text-center transition-all duration-[var(--transition-base)] hover:border-[var(--accent)] {dragging ? 'scale-[1.02] border-[var(--accent)] shadow-[0_0_20px_var(--accent-glow)]' : ''}"
   aria-label="Drop images or click to select"
 >
   <Upload size={24} class="text-[var(--muted)]" />

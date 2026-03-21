@@ -49,12 +49,14 @@
     </div>
   </div>
 
-  <!-- API key warning banner -->
+  <!-- API key warning toast -->
   {#if !$config.has_key}
-    <div class="flex items-center justify-center gap-2 border-t border-[var(--glass-border)] bg-[var(--warning)]/10 px-4 py-1.5 no-drag">
-      <Key size={14} class="text-[var(--warning)]" />
-      <span class="text-xs font-medium text-[var(--warning)]">No API key configured</span>
-      <a href="/settings" class="text-xs font-medium text-[var(--accent)] hover:underline">Add key →</a>
+    <div class="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50 no-drag">
+      <div class="flex items-center gap-2 rounded-lg border border-[rgba(128,128,128,0.12)] bg-[var(--surface)] px-3 py-1.5 shadow-md backdrop-blur-sm">
+        <Key size={14} class="text-[var(--accent)]" />
+        <span class="text-xs font-medium text-[var(--muted)] whitespace-nowrap">No API key configured</span>
+        <a href="/settings" class="text-xs font-medium text-[var(--accent)] hover:underline whitespace-nowrap">Add key →</a>
+      </div>
     </div>
   {/if}
 </header>

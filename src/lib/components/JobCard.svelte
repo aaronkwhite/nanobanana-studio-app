@@ -157,7 +157,7 @@
       <Tooltip text={confirmDelete ? 'Click again to confirm' : 'Delete'}>
         <button
           onclick={(e) => { e.stopPropagation(); handleDelete(); }}
-          class="flex items-center justify-center rounded-[var(--radius-sm)] transition-all {confirmDelete ? 'h-7 px-2 bg-[rgba(239,68,68,0.15)] text-[var(--error)]' : 'h-7 w-7 text-[var(--muted)] hover:text-[var(--error)] hover:bg-[rgba(239,68,68,0.1)]'}"
+          class="flex items-center justify-center rounded-[var(--radius-sm)] transition-all {confirmDelete ? 'h-7 px-2 bg-[var(--error-subtle)] text-[var(--error)]' : 'h-7 w-7 text-[var(--muted)] hover:text-[var(--error)] hover:bg-[var(--error-subtle)]'}"
           aria-label="Delete job"
         >
           {#if confirmDelete}

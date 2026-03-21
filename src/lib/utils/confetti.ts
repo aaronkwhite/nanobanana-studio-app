@@ -6,6 +6,6 @@ export function celebrateBatchComplete() {
     particleCount: 100,
     spread: 70,
     origin: { y: 0.6 },
-    colors: ['#FCD34D', '#FBBF24', '#F59E0B', '#F1F5F9', '#94A3B8'],
+    colors: ['#fbb6ce', '#f687b3', '#ed64a6', '#F1F5F9', '#94A3B8'],
   });
 }

@@ -136,8 +136,7 @@
   <JobList />
 </main>
 
-{#if dev}
-<!-- Dev tools: mock mode toggle (only visible in development) -->
+<!-- Dev tools: mock mode toggle -->
 <div class="fixed bottom-4 right-4 z-50">
   <button
     onclick={() => { mockMode.toggle(); window.location.reload(); }}
@@ -146,4 +145,3 @@
     {$mockMode ? 'Mock Mode' : 'Live Mode'}
   </button>
 </div>
-{/if}

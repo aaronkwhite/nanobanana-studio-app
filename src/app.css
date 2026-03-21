@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
 /* ============================================
-   DESIGN TOKENS — Moonlight Silver + Golden Hour
+   DESIGN TOKENS — Moonlight Silver + Rose Gold
    ============================================ */
 
 :root {
@@ -16,21 +16,18 @@
   --silver-700: #334155;
   --silver-800: #1E293B;
 
-  /* --- Golden Hour (accent) --- */
-  --golden-50: #FEFCE8;
-  --golden-100: #FEF3C7;
-  --golden-200: #FDE68A;
-  --golden-300: #FCD34D;
-  --golden-400: #FBBF24;
-  --golden-500: #F59E0B;
-  --golden-600: #D97706;
-  --golden-700: #B45309;
-  --golden-800: #92400E;
+  /* --- Rose Gold (accent) --- */
+  --rose-50: #fdf2f8;
+  --rose-100: #fce7f3;
+  --rose-200: #fbb6ce;
+  --rose-300: #f687b3;
+  --rose-400: #ed64a6;
+  --rose-500: #d53f8c;
+  --rose-600: #b83280;
+  --rose-700: #97266d;
+  --rose-800: #702459;
 
-  /* --- Semantic --- */
-  --success: #22c55e;
-  --warning: #F59E0B;
-  --error: #ef4444;
+  /* --- Semantic (base values, overridden per theme) --- */
 
   /* --- Spacing (4px grid) --- */
   --space-xs: 4px;
@@ -71,11 +68,22 @@
   --border: var(--silver-200);
   --text: var(--silver-800);
   --muted: var(--silver-500);
-  --accent: var(--golden-500);
-  --accent-hover: var(--golden-600);
-  --accent-active: var(--golden-700);
+  --accent: var(--rose-500);
+  --accent-hover: var(--rose-600);
+  --accent-active: var(--rose-700);
   --accent-text: #ffffff;
-  --accent-subtle: var(--golden-100);
+  --accent-subtle: var(--rose-50);
+  --accent-glow: rgba(213, 63, 140, 0.25);
+
+  --success: #2D9D78;
+  --success-subtle: rgba(45, 157, 120, 0.08);
+  --success-border: rgba(45, 157, 120, 0.2);
+  --warning: #C08A2E;
+  --warning-subtle: rgba(192, 138, 46, 0.08);
+  --warning-border: rgba(192, 138, 46, 0.2);
+  --error: #C93B3B;
+  --error-subtle: rgba(201, 59, 59, 0.08);
+  --error-border: rgba(201, 59, 59, 0.2);
 
   --glass-bg: rgba(255, 255, 255, 0.7);
   --glass-border: var(--silver-200);
@@ -95,11 +103,22 @@
   --border: var(--silver-700);
   --text: var(--silver-100);
   --muted: var(--silver-400);
-  --accent: var(--golden-300);
-  --accent-hover: var(--golden-400);
-  --accent-active: var(--golden-500);
-  --accent-text: var(--golden-800);
-  --accent-subtle: rgba(252, 211, 77, 0.1);
+  --accent: var(--rose-400);
+  --accent-hover: var(--rose-300);
+  --accent-active: var(--rose-500);
+  --accent-text: var(--rose-800);
+  --accent-subtle: rgba(237, 100, 166, 0.1);
+  --accent-glow: rgba(237, 100, 166, 0.25);
+
+  --success: #5BB89A;
+  --success-subtle: rgba(91, 184, 154, 0.1);
+  --success-border: rgba(91, 184, 154, 0.2);
+  --warning: #D4A54A;
+  --warning-subtle: rgba(212, 165, 74, 0.1);
+  --warning-border: rgba(212, 165, 74, 0.2);
+  --error: #E06060;
+  --error-subtle: rgba(224, 96, 96, 0.1);
+  --error-border: rgba(224, 96, 96, 0.2);
 
   --glass-bg: rgba(30, 41, 59, 0.6);
   --glass-border: rgba(255, 255, 255, 0.08);
