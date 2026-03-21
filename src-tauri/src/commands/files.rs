@@ -1,3 +1,4 @@
+use crate::db::get_db;
 use crate::models::UploadedFile;
 use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
@@ -6,6 +7,58 @@ use uuid::Uuid;
 const MAX_FILE_SIZE: u64 = 10 * 1024 * 1024; // 10MB
 const ALLOWED_EXTENSIONS: &[&str] = &["jpg", "jpeg", "png", "webp", "gif"];
 
+fn get_uploads_dir(app: &AppHandle) -> Result<PathBuf, String> {
+    let db = get_db(app);
+    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    let custom: Option<String> = conn
+        .query_row(
+            "SELECT value FROM config WHERE key = 'uploads_dir'",
+            [],
+            |row| row.get(0),
+        )
+        .ok();
+    if let Some(dir) = custom {
+        if !dir.is_empty() {
+            let path = PathBuf::from(dir);
+            std::fs::create_dir_all(&path).map_err(|e| e.to_string())?;
+            return Ok(path);
+        }
+    }
+    let default = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("uploads");
+    std::fs::create_dir_all(&default).map_err(|e| e.to_string())?;
+    Ok(default)
+}
+
+fn get_results_dir(app: &AppHandle) -> Result<PathBuf, String> {
+    let db = get_db(app);
+    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    let custom: Option<String> = conn
+        .query_row(
+            "SELECT value FROM config WHERE key = 'results_dir'",
+            [],
+            |row| row.get(0),
+        )
+        .ok();
+    if let Some(dir) = custom {
+        if !dir.is_empty() {
+            let path = PathBuf::from(dir);
+            std::fs::create_dir_all(&path).map_err(|e| e.to_string())?;
+            return Ok(path);
+        }
+    }
+    let default = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("results");
+    std::fs::create_dir_all(&default).map_err(|e| e.to_string())?;
+    Ok(default)
+}
+
 #[tauri::command]
 pub fn upload_images(app: AppHandle, files: Vec<String>) -> Result<Vec<UploadedFile>, String> {
     // Enforce max 20 files before processing
@@ -13,12 +66,7 @@ pub fn upload_images(app: AppHandle, files: Vec<String>) -> Result<Vec<UploadedF
         return Err("Maximum 20 files allowed per batch".to_string());
     }
 
-    let app_data_dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| e.to_string())?;
-    let uploads_dir = app_data_dir.join("uploads");
-    std::fs::create_dir_all(&uploads_dir).map_err(|e| e.to_string())?;
+    let uploads_dir = get_uploads_dir(&app)?;
 
     let mut uploaded = Vec::new();
 
@@ -83,11 +131,26 @@ pub fn get_image(app: AppHandle, path: String) -> Result<String, String> {
         return Err(format!("Image not found: {}", path.display()));
     }
 
-    // Validate path is within allowed directories
+    // Validate path is within allowed directories (default + custom configured)
     let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     let canonical = path.canonicalize().map_err(|e| e.to_string())?;
-    let allowed = [app_data_dir.join("uploads"), app_data_dir.join("results")];
-    if !allowed.iter().any(|d| canonical.starts_with(d)) {
+    let uploads_dir = get_uploads_dir(&app)?;
+    let results_dir = get_results_dir(&app)?;
+    let mut allowed = vec![
+        app_data_dir.join("uploads"),
+        app_data_dir.join("results"),
+    ];
+    if !allowed.contains(&uploads_dir) {
+        allowed.push(uploads_dir);
+    }
+    if !allowed.contains(&results_dir) {
+        allowed.push(results_dir);
+    }
+    if !allowed.iter().any(|d| {
+        d.canonicalize()
+            .map(|cd| canonical.starts_with(cd))
+            .unwrap_or(false)
+    }) {
         return Err("Access denied: path outside allowed directories".to_string());
     }
 
@@ -115,7 +178,8 @@ pub fn get_image(app: AppHandle, path: String) -> Result<String, String> {
 
 #[tauri::command]
 pub fn delete_upload(app: AppHandle, path: String) -> Result<(), String> {
-    let uploads_dir = app
+    let uploads_dir = get_uploads_dir(&app)?;
+    let default_uploads = app
         .path()
         .app_data_dir()
         .map_err(|e| e.to_string())?
@@ -123,10 +187,18 @@ pub fn delete_upload(app: AppHandle, path: String) -> Result<(), String> {
 
     let file_path = PathBuf::from(&path);
 
-    // Security: canonicalize both paths to prevent symlink bypass
-    let canonical_uploads = uploads_dir.canonicalize().map_err(|e| e.to_string())?;
+    // Security: canonicalize paths to prevent symlink bypass
     let canonical_path = file_path.canonicalize().map_err(|e| e.to_string())?;
-    if !canonical_path.starts_with(&canonical_uploads) {
+    let mut allowed_dirs = vec![uploads_dir];
+    if !allowed_dirs.contains(&default_uploads) {
+        allowed_dirs.push(default_uploads);
+    }
+    let in_allowed = allowed_dirs.iter().any(|d| {
+        d.canonicalize()
+            .map(|cd| canonical_path.starts_with(cd))
+            .unwrap_or(false)
+    });
+    if !in_allowed {
         return Err("Cannot delete files outside uploads directory".to_string());
     }
 

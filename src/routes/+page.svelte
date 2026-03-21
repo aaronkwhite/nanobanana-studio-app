@@ -34,6 +34,7 @@
       jobs.setJobs(createMockJobs());
     } else {
       config.load();
+      settings.load();
       jobs.loadJobs();
       jobs.startPolling();
     }

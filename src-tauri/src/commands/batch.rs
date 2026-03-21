@@ -26,6 +26,32 @@ fn get_app_data_dir(app: &AppHandle) -> Result<std::path::PathBuf, String> {
     app.path().app_data_dir().map_err(|e| e.to_string())
 }
 
+fn get_results_dir(app: &AppHandle) -> Result<std::path::PathBuf, String> {
+    let db = get_db(app);
+    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    let custom: Option<String> = conn
+        .query_row(
+            "SELECT value FROM config WHERE key = 'results_dir'",
+            [],
+            |row| row.get(0),
+        )
+        .ok();
+    if let Some(dir) = custom {
+        if !dir.is_empty() {
+            let path = std::path::PathBuf::from(dir);
+            fs::create_dir_all(&path).map_err(|e| e.to_string())?;
+            return Ok(path);
+        }
+    }
+    let default = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("results");
+    fs::create_dir_all(&default).map_err(|e| e.to_string())?;
+    Ok(default)
+}
+
 #[tauri::command]
 pub async fn submit_batch(app: AppHandle, job_id: String) -> Result<(), String> {
     let api_key = get_api_key(&app)?;
@@ -278,7 +304,6 @@ pub async fn download_results(
     }
 
     let api_key = get_api_key(&app)?;
-    let app_data_dir = get_app_data_dir(&app)?;
     let client = Client::new();
 
     // Get batch to find result file
@@ -318,8 +343,7 @@ pub async fn download_results(
     }
 
     let result_text = result_resp.text().await.map_err(|e| e.to_string())?;
-    let results_dir = app_data_dir.join("results");
-    fs::create_dir_all(&results_dir).map_err(|e| format!("Failed to create results dir: {}", e))?;
+    let results_dir = get_results_dir(&app)?;
     let now = chrono::Utc::now().to_rfc3339();
 
     let mut completed = 0i32;

@@ -1,7 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { ArrowLeft, Eye, EyeOff, Sun, Moon, Monitor, Key, Palette, SlidersHorizontal, Info, RotateCcw, ExternalLink, Heart, Coffee } from 'lucide-svelte';
+  import { ArrowLeft, Eye, EyeOff, Sun, Moon, Monitor, Key, Palette, SlidersHorizontal, Info, RotateCcw, ExternalLink, Heart, Coffee, FolderOpen } from 'lucide-svelte';
   import { open } from '@tauri-apps/plugin-shell';
+  import { open as dialogOpen } from '@tauri-apps/plugin-dialog';
+  import * as cmd from '$lib/utils/commands';
 
   function openExternal(url: string) {
     open(url).catch(() => {
@@ -21,10 +23,18 @@
   let saving: boolean = $state(false);
   let error: string = $state('');
   let success: string = $state('');
+  let uploadsDir: string = $state('');
+  let resultsDir: string = $state('');
+
+  async function loadDirectories() {
+    uploadsDir = (await cmd.getSetting('uploads_dir')) ?? '';
+    resultsDir = (await cmd.getSetting('results_dir')) ?? '';
+  }
 
   const tabs = [
     { value: 'api-key', label: 'API Key', icon: Key },
     { value: 'defaults', label: 'Defaults', icon: SlidersHorizontal },
+    { value: 'storage', label: 'Storage', icon: FolderOpen },
     { value: 'appearance', label: 'Appearance', icon: Palette },
     { value: 'about', label: 'About', icon: Info },
   ];
@@ -35,6 +45,8 @@
 
   onMount(() => {
     config.load();
+    settings.load();
+    loadDirectories();
   });
 
   async function saveApiKey() {
@@ -199,6 +211,61 @@
           <RotateCcw size={14} />
           Reset to defaults
         </Button>
+      </div>
+    </div>
+
+  <!-- Storage -->
+  {:else if activeTab === 'storage'}
+    <div class="glass p-5 flex flex-col gap-4">
+      <div>
+        <h2 class="text-sm font-semibold text-[var(--text)]">Storage Directories</h2>
+        <p class="text-xs text-[var(--muted)] mt-1">Choose where files are stored. Leave empty to use the default app data directory.</p>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <div class="flex flex-col gap-1.5">
+          <span class="text-xs font-medium text-[var(--muted)]">Output Directory (generated images)</span>
+          <div class="flex gap-2">
+            <div class="flex-1 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--muted)] truncate">
+              {resultsDir || 'Default (App Data/results/)'}
+            </div>
+            <Button variant="secondary" size="sm" onclick={async () => {
+              const dir = await dialogOpen({ directory: true });
+              if (dir) {
+                resultsDir = dir;
+                await cmd.saveSetting('results_dir', dir);
+              }
+            }}>Browse</Button>
+            {#if resultsDir}
+              <Button variant="ghost" size="sm" onclick={async () => {
+                resultsDir = '';
+                await cmd.saveSetting('results_dir', '');
+              }}>Reset</Button>
+            {/if}
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <span class="text-xs font-medium text-[var(--muted)]">Upload Directory (source images for I2I)</span>
+          <div class="flex gap-2">
+            <div class="flex-1 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--muted)] truncate">
+              {uploadsDir || 'Default (App Data/uploads/)'}
+            </div>
+            <Button variant="secondary" size="sm" onclick={async () => {
+              const dir = await dialogOpen({ directory: true });
+              if (dir) {
+                uploadsDir = dir;
+                await cmd.saveSetting('uploads_dir', dir);
+              }
+            }}>Browse</Button>
+            {#if uploadsDir}
+              <Button variant="ghost" size="sm" onclick={async () => {
+                uploadsDir = '';
+                await cmd.saveSetting('uploads_dir', '');
+              }}>Reset</Button>
+            {/if}
+          </div>
+        </div>
       </div>
     </div>
 

@@ -1,6 +1,7 @@
 use crate::db::get_db;
 use crate::models::ConfigStatus;
 use rusqlite::params;
+use std::collections::HashMap;
 use tauri::AppHandle;
 
 const API_KEY_KEY: &str = "gemini_api_key";
@@ -60,6 +61,49 @@ pub fn delete_config(app: AppHandle) -> Result<(), String> {
         .map_err(|e| e.to_string())?;
 
     Ok(())
+}
+
+#[tauri::command]
+pub fn get_setting(app: AppHandle, key: String) -> Result<Option<String>, String> {
+    let db = get_db(&app);
+    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    let value = conn
+        .query_row(
+            "SELECT value FROM config WHERE key = ?1",
+            params![key],
+            |row| row.get::<_, String>(0),
+        )
+        .ok();
+    Ok(value)
+}
+
+#[tauri::command]
+pub fn save_setting(app: AppHandle, key: String, value: String) -> Result<(), String> {
+    let db = get_db(&app);
+    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    conn.execute(
+        "INSERT INTO config (key, value) VALUES (?1, ?2) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        params![key, value],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn get_all_settings(app: AppHandle) -> Result<HashMap<String, String>, String> {
+    let db = get_db(&app);
+    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    let mut stmt = conn
+        .prepare("SELECT key, value FROM config")
+        .map_err(|e| e.to_string())?;
+    let map = stmt
+        .query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })
+        .map_err(|e| e.to_string())?
+        .filter_map(|r| r.ok())
+        .collect();
+    Ok(map)
 }
 
 #[allow(dead_code)]
