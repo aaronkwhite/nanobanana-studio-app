@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.1] - 2026-03-22
+
+### UI Improvements
+- **Fluid-width mode tabs** — Text to Image / Image to Image tabs now stretch full width instead of hugging content
+- **Generations section label** — "Generations" heading with active job count badge above job cards, separated from the prompt form by a divider
+- **Expand hint on completed cards** — subtle down chevron below completed job cards indicates they're clickable to reveal results
+- **Active badge relocated** — moved from title bar to right-aligned in the Generations header for better context
+- **Select hover/focus** — neutral border tint instead of theme-colored borders
+
 ## [0.3.0] - 2026-03-21
 
 ### Design System Overhaul — Rose Gold + Apple-Native Polish

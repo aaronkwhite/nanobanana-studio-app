@@ -1,9 +1,8 @@
 <script lang="ts">
   import { Sun, Moon, Monitor, Settings, AlertTriangle, Key } from 'lucide-svelte';
-  import { Badge, Tooltip } from '$lib/components/ui';
+  import { Tooltip } from '$lib/components/ui';
   import { theme } from '$lib/stores/theme';
   import { config } from '$lib/stores/config';
-  import { activeJobsCount } from '$lib/stores/jobs';
 
   const themeIcons = { light: Sun, dark: Moon, system: Monitor } as const;
   const ThemeIcon = $derived(themeIcons[$theme]);
@@ -18,12 +17,9 @@
     <!-- Left spacer for traffic lights (86px) -->
     <div class="shrink-0" style="width: 86px;"></div>
 
-    <!-- Center: title + badges -->
+    <!-- Center: title -->
     <div data-tauri-drag-region class="flex items-center gap-2">
       <span class="text-sm font-semibold text-[var(--text)]">Nanobanana Studio</span>
-      {#if $activeJobsCount > 0}
-        <Badge variant="accent">{$activeJobsCount} active</Badge>
-      {/if}
     </div>
 
     <!-- Right: actions (no-drag so buttons work) -->

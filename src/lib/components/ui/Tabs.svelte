@@ -38,7 +38,7 @@
   }
 </script>
 
-<div class="tabs-container inline-flex relative rounded-[10px] p-[2px] {className}">
+<div class="tabs-container flex relative rounded-[10px] p-[2px] {className}">
   <div
     class="tabs-pill absolute top-[2px] h-[calc(100%-4px)] rounded-[var(--radius-md)]"
     style="transition: transform 250ms cubic-bezier(0.22, 1, 0.36, 1), width 250ms cubic-bezier(0.22, 1, 0.36, 1); {pillStyle}"
@@ -48,7 +48,7 @@
       bind:this={tabEls[i]}
       type="button"
       onclick={() => selectTab(tab)}
-      class="relative z-[1] rounded-[var(--radius-md)] px-4 py-[5px] text-[13px] cursor-pointer bg-transparent border-none font-sans tracking-tight transition-colors duration-200 {value === tab.value ? 'font-medium text-[var(--text)]' : 'font-normal text-[var(--muted)] hover:text-[var(--text)]'}"
+      class="relative z-[1] flex-1 text-center rounded-[var(--radius-md)] px-4 py-[5px] text-[13px] cursor-pointer bg-transparent border-none font-sans tracking-tight transition-colors duration-200 {value === tab.value ? 'font-medium text-[var(--text)]' : 'font-normal text-[var(--muted)] hover:text-[var(--text)]'}"
     >
       {tab.label}
     </button>

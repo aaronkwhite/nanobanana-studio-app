@@ -55,7 +55,7 @@
     bind:this={triggerEl}
     type="button"
     onclick={toggle}
-    class="flex h-9 w-full items-center justify-between rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 text-sm text-[var(--text)] transition-colors hover:border-[var(--muted)] focus:outline-none focus:border-[var(--accent)]"
+    class="flex h-9 w-full items-center justify-between rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 text-sm text-[var(--text)] transition-colors hover:border-[rgba(128,128,128,0.3)] focus:outline-none focus:border-[rgba(128,128,128,0.3)]"
     aria-expanded={open}
     aria-haspopup="listbox"
   >

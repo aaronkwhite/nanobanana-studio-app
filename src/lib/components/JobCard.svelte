@@ -167,14 +167,17 @@
           {/if}
         </button>
       </Tooltip>
-      {#if canExpand}
-        <ChevronDown
-          size={14}
-          class="text-[var(--muted)] transition-transform duration-[var(--transition-fast)] {expanded ? 'rotate-180' : ''}"
-        />
-      {/if}
     </div>
   </button>
+
+  {#if canExpand && !expanded}
+    <div class="flex justify-center pb-1.5 -mt-1">
+      <ChevronDown
+        size={14}
+        class="text-[var(--muted)] opacity-40"
+      />
+    </div>
+  {/if}
 
   {#if expanded && items.length > 0}
     <div transition:slide={{ duration: 200 }}>
