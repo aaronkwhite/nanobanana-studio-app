@@ -91,3 +91,7 @@ export async function saveSetting(key: string, value: string): Promise<void> {
 export async function getAllSettings(): Promise<Record<string, string>> {
   return invoke<Record<string, string>>('get_all_settings');
 }
+
+export async function getDefaultResultsDir(): Promise<string> {
+  return invoke<string>('get_default_results_dir');
+}

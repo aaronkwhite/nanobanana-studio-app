@@ -1,13 +1,38 @@
 # Changelog
 
-## [0.3.1] - 2026-03-22
+## [0.4.0] - 2026-03-22
 
-### UI Improvements
-- **Fluid-width mode tabs** — Text to Image / Image to Image tabs now stretch full width instead of hugging content
-- **Generations section label** — "Generations" heading with active job count badge above job cards, separated from the prompt form by a divider
-- **Expand hint on completed cards** — subtle down chevron below completed job cards indicates they're clickable to reveal results
-- **Active badge relocated** — moved from title bar to right-aligned in the Generations header for better context
-- **Select hover/focus** — neutral border tint instead of theme-colored borders
+### Rebrand — Nana Studio
+- **Renamed from "Nanobanana Studio" to "Nana Studio"** across all user-facing strings, window title, meta tags, download filenames, and Rust backend
+- **New logo** — rose-gold gradient banana wordmark SVG replaces emoji icon in About page
+- **Tagline** — "Peel. Prompt. Produce."
+- **About page rewritten** — explains Batch API value prop, auto-reads version from Tauri config
+
+### Settings Overhaul
+- **Consolidated tabs** — 5 tabs (API Key, Defaults, Storage, Appearance, About) merged into 2 (General, About)
+- **Back arrow + title moved** above tabs instead of in the titlebar
+- **Z-index fix** — dropdown menus in settings no longer render behind cards below
+- **Version number** now pulled dynamically from Tauri at runtime
+
+### Storage
+- **Default output directory** changed from `~/Library/Application Support/` to `~/Pictures/Nana Studio/`
+- **Uploads directory** hidden from settings UI (transient, stays in App Data)
+- **New `get_default_results_dir` command** — frontend displays the actual resolved path
+- **Security allowlist** updated to include Pictures directory
+
+### Dark Mode
+- **Glass card fix** — disabled backdrop blur/saturation in dark mode to eliminate blue tint amplification
+- **Glass background** tuned to 40% opacity silver-700 for subtle card contrast
+
+### Image Drop Zone
+- **Tauri native drag-drop** — replaced broken browser `ondrop` with `getCurrentWebview().onDragDropEvent()` for proper Finder file drops
+- **Pink accent background** on hover and drag-over states with `background-clip: padding-box` to stay inside dashed border
+
+### Other
+- **Fluid-width mode tabs** — stretch full width instead of hugging content
+- **Generations section label** with active badge and HR divider above job cards
+- **Expand hint** — subtle chevron on completed cards
+- **lucide-svelte** upgraded to v1.0.0-rc.1
 
 ## [0.3.0] - 2026-03-21
 

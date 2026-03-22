@@ -52,9 +52,9 @@ fn get_results_dir(app: &AppHandle) -> Result<PathBuf, String> {
     }
     let default = app
         .path()
-        .app_data_dir()
+        .picture_dir()
         .map_err(|e| e.to_string())?
-        .join("results");
+        .join("Nana Studio");
     std::fs::create_dir_all(&default).map_err(|e| e.to_string())?;
     Ok(default)
 }
@@ -136,9 +136,11 @@ pub fn get_image(app: AppHandle, path: String) -> Result<String, String> {
     let canonical = path.canonicalize().map_err(|e| e.to_string())?;
     let uploads_dir = get_uploads_dir(&app)?;
     let results_dir = get_results_dir(&app)?;
+    let pictures_dir = app.path().picture_dir().map_err(|e| e.to_string())?;
     let mut allowed = vec![
         app_data_dir.join("uploads"),
         app_data_dir.join("results"),
+        pictures_dir.join("Nana Studio"),
     ];
     if !allowed.contains(&uploads_dir) {
         allowed.push(uploads_dir);

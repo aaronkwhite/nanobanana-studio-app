@@ -45,9 +45,9 @@ fn get_results_dir(app: &AppHandle) -> Result<std::path::PathBuf, String> {
     }
     let default = app
         .path()
-        .app_data_dir()
+        .picture_dir()
         .map_err(|e| e.to_string())?
-        .join("results");
+        .join("Nana Studio");
     fs::create_dir_all(&default).map_err(|e| e.to_string())?;
     Ok(default)
 }

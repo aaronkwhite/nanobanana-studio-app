@@ -30,8 +30,9 @@ pub fn run() {
             // Create required directories
             let app_data_dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(app_data_dir.join("uploads")).ok();
-            std::fs::create_dir_all(app_data_dir.join("results")).ok();
             std::fs::create_dir_all(app_data_dir.join("temp")).ok();
+            let pictures_dir = app.path().picture_dir()?;
+            std::fs::create_dir_all(pictures_dir.join("Nana Studio")).ok();
 
             Ok(())
         })
@@ -47,6 +48,7 @@ pub fn run() {
             commands::get_setting,
             commands::save_setting,
             commands::get_all_settings,
+            commands::get_default_results_dir,
             commands::upload_images,
             commands::get_image,
             commands::delete_upload,

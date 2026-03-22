@@ -19,7 +19,7 @@
 
     <!-- Center: title -->
     <div data-tauri-drag-region class="flex items-center gap-2">
-      <span class="text-sm font-semibold text-[var(--text)]">Nanobanana Studio</span>
+      <span class="text-sm font-semibold text-[var(--text)]">Nana Studio</span>
     </div>
 
     <!-- Right: actions (no-drag so buttons work) -->

@@ -38,7 +38,7 @@
   async function handleDownload(item: JobItem, dataUrl: string) {
     const link = document.createElement('a');
     link.href = dataUrl;
-    link.download = `nanobanana-${item.id.slice(0, 8)}.png`;
+    link.download = `nana-${item.id.slice(0, 8)}.png`;
     link.click();
   }
 </script>

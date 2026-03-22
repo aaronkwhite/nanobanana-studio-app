@@ -2,7 +2,7 @@ use crate::db::get_db;
 use crate::models::ConfigStatus;
 use rusqlite::params;
 use std::collections::HashMap;
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 
 const API_KEY_KEY: &str = "gemini_api_key";
 
@@ -104,6 +104,13 @@ pub fn get_all_settings(app: AppHandle) -> Result<HashMap<String, String>, Strin
         .filter_map(|r| r.ok())
         .collect();
     Ok(map)
+}
+
+#[tauri::command]
+pub fn get_default_results_dir(app: AppHandle) -> Result<String, String> {
+    let pictures = app.path().picture_dir().map_err(|e| e.to_string())?;
+    let dir = pictures.join("Nana Studio");
+    Ok(dir.to_string_lossy().to_string())
 }
 
 #[allow(dead_code)]

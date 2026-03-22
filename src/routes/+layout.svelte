@@ -13,8 +13,8 @@
 </script>
 
 <svelte:head>
-  <title>Nanobanana Studio</title>
-  <meta name="description" content="Batch image generation powered by Gemini" />
+  <title>Nana Studio</title>
+  <meta name="description" content="Peel. Prompt. Produce. Batch media generation powered by Gemini." />
 </svelte:head>
 
 <Tooltip.Provider delayDuration={300}>

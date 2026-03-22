@@ -5,7 +5,7 @@ import HeaderTestWrapper from './HeaderTestWrapper.svelte';
 describe('Header', () => {
   it('renders app name', () => {
     render(HeaderTestWrapper);
-    expect(screen.getByText('Nanobanana Studio')).toBeInTheDocument();
+    expect(screen.getByText('Nana Studio')).toBeInTheDocument();
   });
 
   it('renders settings link', () => {

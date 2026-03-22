@@ -120,9 +120,9 @@
   --error-subtle: rgba(224, 96, 96, 0.1);
   --error-border: rgba(224, 96, 96, 0.2);
 
-  --glass-bg: rgba(30, 41, 59, 0.6);
+  --glass-bg: rgba(51, 65, 85, 0.4);
   --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-blur: blur(10px) saturate(150%);
+  --glass-blur: none;
 
   --overlay-bg: rgba(0, 0, 0, 0.6);
   --overlay-blur: blur(4px);

@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Nanobanana Studio",
-  "version": "0.2.0",
+  "productName": "Nana Studio",
+  "version": "0.4.0",
   "identifier": "com.nanobanana.studio",
   "build": {
     "frontendDist": "../build",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Nanobanana Studio",
+        "title": "Nana Studio",
         "width": 800,
         "height": 700,
         "minWidth": 480,
