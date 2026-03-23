@@ -82,3 +82,65 @@ pub fn validate_batch_name(name: &str) -> Result<(), String> {
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_mime_from_ext_jpg() {
+        assert_eq!(mime_from_ext("jpg"), "image/jpeg");
+    }
+
+    #[test]
+    fn test_mime_from_ext_jpeg() {
+        assert_eq!(mime_from_ext("jpeg"), "image/jpeg");
+    }
+
+    #[test]
+    fn test_mime_from_ext_png() {
+        assert_eq!(mime_from_ext("png"), "image/png");
+    }
+
+    #[test]
+    fn test_mime_from_ext_webp() {
+        assert_eq!(mime_from_ext("webp"), "image/webp");
+    }
+
+    #[test]
+    fn test_mime_from_ext_gif() {
+        assert_eq!(mime_from_ext("gif"), "image/gif");
+    }
+
+    #[test]
+    fn test_mime_from_ext_unknown_defaults_to_png() {
+        assert_eq!(mime_from_ext("bmp"), "image/png");
+        assert_eq!(mime_from_ext("tiff"), "image/png");
+        assert_eq!(mime_from_ext(""), "image/png");
+    }
+
+    #[test]
+    fn test_validate_batch_name_valid() {
+        assert!(validate_batch_name("batches/abc123").is_ok());
+        assert!(validate_batch_name("batches/my-batch-2024").is_ok());
+    }
+
+    #[test]
+    fn test_validate_batch_name_rejects_missing_prefix() {
+        assert!(validate_batch_name("abc123").is_err());
+        assert!(validate_batch_name("").is_err());
+        assert!(validate_batch_name("batch/abc").is_err());
+    }
+
+    #[test]
+    fn test_validate_batch_name_rejects_path_traversal() {
+        assert!(validate_batch_name("batches/../etc/passwd").is_err());
+        assert!(validate_batch_name("batches/..").is_err());
+    }
+
+    #[test]
+    fn test_validate_batch_name_rejects_url_injection() {
+        assert!(validate_batch_name("batches/https://evil.com").is_err());
+        assert!(validate_batch_name("batches/ftp://evil.com").is_err());
+    }
+}

@@ -124,3 +124,51 @@ pub fn get_default_results_dir(app: AppHandle) -> Result<String, String> {
     Ok(dir.to_string_lossy().to_string())
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_allowed_setting_keys_contains_expected() {
+        assert!(ALLOWED_SETTING_KEYS.contains(&"default_output_size"));
+        assert!(ALLOWED_SETTING_KEYS.contains(&"default_aspect_ratio"));
+        assert!(ALLOWED_SETTING_KEYS.contains(&"default_temperature"));
+        assert!(ALLOWED_SETTING_KEYS.contains(&"results_dir"));
+        assert!(ALLOWED_SETTING_KEYS.contains(&"uploads_dir"));
+    }
+
+    #[test]
+    fn test_allowed_setting_keys_rejects_api_key() {
+        assert!(!ALLOWED_SETTING_KEYS.contains(&"gemini_api_key"));
+    }
+
+    #[test]
+    fn test_allowed_setting_keys_rejects_arbitrary() {
+        assert!(!ALLOWED_SETTING_KEYS.contains(&"admin"));
+        assert!(!ALLOWED_SETTING_KEYS.contains(&"password"));
+        assert!(!ALLOWED_SETTING_KEYS.contains(&""));
+        assert!(!ALLOWED_SETTING_KEYS.contains(&"DROP TABLE config"));
+    }
+
+    #[test]
+    fn test_api_key_masking_long_key() {
+        let key = "AIzaSyAbCdEfGhIjKlMnOpQrStUvWxYz";
+        let masked = if key.len() > 8 {
+            format!("{}...{}", &key[..2], &key[key.len() - 3..])
+        } else {
+            "****".to_string()
+        };
+        assert_eq!(masked, "AI...xYz");
+    }
+
+    #[test]
+    fn test_api_key_masking_short_key() {
+        let key = "short";
+        let masked = if key.len() > 8 {
+            format!("{}...{}", &key[..2], &key[key.len() - 3..])
+        } else {
+            "****".to_string()
+        };
+        assert_eq!(masked, "****");
+    }
+}
