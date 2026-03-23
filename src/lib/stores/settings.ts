@@ -5,7 +5,7 @@ import * as cmd from '$lib/utils/commands';
 
 const defaultSettings: GenerationDefaults = {
   output_size: '1K',
-  aspect_ratio: '1:1',
+  aspect_ratio: '16:9',
   temperature: 1,
 };
 

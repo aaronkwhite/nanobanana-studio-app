@@ -56,7 +56,7 @@
 
   const sizeOptions = Object.entries(OUTPUT_SIZES).map(([value, { label }]) => ({ value: value as OutputSize, label }));
   const ratioOptions = Object.entries(ASPECT_RATIOS).map(([value, label]) => ({ value: value as AspectRatio, label }));
-  const tempOptions = TEMPERATURES.map((t) => ({ value: String(t), label: t === 0 ? 'Precise' : t === 2 ? 'Creative' : String(t) }));
+  const tempOptions = TEMPERATURES.map((t) => ({ value: String(t), label: t === 0 ? '0 (Precise)' : t === 1 ? '1 (Default)' : t === 2 ? '2 (Creative)' : String(t) }));
 
   onMount(() => {
     config.load();
@@ -96,12 +96,15 @@
   }
 </script>
 
-<!-- Settings titlebar (draggable, spacer only) -->
+<!-- Settings titlebar (draggable) -->
 <div
   data-tauri-drag-region
-  class="sticky top-0 z-40 glass border-b border-[var(--glass-border)] titlebar"
+  class="sticky top-0 z-50 border-b border-[var(--glass-border)] titlebar"
+  style="background: var(--titlebar-bg, var(--glass-bg)); backdrop-filter: blur(8px) saturate(120%); -webkit-backdrop-filter: blur(8px) saturate(120%);"
 >
-  <div data-tauri-drag-region class="h-[52px]" style="padding-left: 86px;"></div>
+  <div data-tauri-drag-region class="flex h-12 items-center justify-center px-4" style="padding-left: 86px;">
+    <span class="text-sm font-semibold text-[var(--text)]">Nana Studio</span>
+  </div>
 </div>
 
 <div class="px-6 py-6 flex flex-col gap-4">
@@ -245,11 +248,11 @@
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <div class="flex gap-2">
-            <div class="flex-1 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--muted)] truncate">
+          <div class="flex items-center gap-2">
+            <div class="flex-1 flex items-center h-9 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 text-sm text-[var(--muted)] truncate">
               {resultsDir || defaultResultsDir || '~/Pictures/Nana Studio'}
             </div>
-            <Button variant="secondary" size="sm" onclick={async () => {
+            <Button variant="secondary" size="md" onclick={async () => {
               const dir = await dialogOpen({ directory: true });
               if (dir) {
                 resultsDir = dir;

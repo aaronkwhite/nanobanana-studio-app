@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.4.1] - 2026-03-22
+
+### UI Polish
+- **Titlebar** — consistent `h-12` height, translucent glass blur (`blur(8px)` at 30% opacity) with dedicated `--titlebar-bg` token, `z-50` to stay above settings cards
+- **Default generation settings** — changed to 1K, Wide (16:9), Temperature 1
+- **Temperature labels** — now show `0 (Precise)`, `0.5`, `1 (Default)`, `1.5`, `2 (Creative)`
+- **Output directory** — Browse button sized to match input height
+- **Light mode glass** — reduced card opacity to 40% for more depth
+
 ## [0.4.0] - 2026-03-22
 
 ### Rebrand — Nana Studio

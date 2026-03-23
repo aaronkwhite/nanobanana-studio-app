@@ -10,10 +10,11 @@
 
 <header
   data-tauri-drag-region
-  class="glass sticky top-0 z-40 border-b border-[var(--glass-border)] titlebar"
+  class="sticky top-0 z-50 border-b border-[var(--glass-border)] titlebar"
+  style="background: var(--titlebar-bg, var(--glass-bg)); backdrop-filter: blur(8px) saturate(120%); -webkit-backdrop-filter: blur(8px) saturate(120%);"
 >
   <!-- Top row: centered title with traffic light space -->
-  <div data-tauri-drag-region class="flex items-center justify-between px-4 py-2.5">
+  <div data-tauri-drag-region class="flex h-12 items-center justify-between px-4">
     <!-- Left spacer for traffic lights (86px) -->
     <div class="shrink-0" style="width: 86px;"></div>
 
