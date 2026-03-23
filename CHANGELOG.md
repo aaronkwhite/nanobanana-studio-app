@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.3] - 2026-03-23
+
+### Test Coverage
+- **57 total tests** (42 frontend + 15 Rust) — up from 13 frontend / 0 Rust
+- **Rust backend tests** — MIME type mapping, batch name validation (SSRF/path traversal), save_setting key allowlist (security boundary), API key masking logic
+- **Frontend store tests** — settings store (load/update/reset), config store (load/save/remove/validate)
+- **Frontend utility tests** — select option arrays, isActiveJob predicate
+- **Frontend type tests** — OUTPUT_SIZES prices, ASPECT_RATIOS, TEMPERATURES, calculateCost
+
+### Documentation
+- **README rewritten** — rebranded to Nana Studio, updated features, testing section, project structure, design system overview
+
 ## [0.4.2] - 2026-03-23
 
 ### Code Review Cleanup
