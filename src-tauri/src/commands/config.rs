@@ -77,8 +77,19 @@ pub fn get_setting(app: AppHandle, key: String) -> Result<Option<String>, String
     Ok(value)
 }
 
+const ALLOWED_SETTING_KEYS: &[&str] = &[
+    "default_output_size",
+    "default_aspect_ratio",
+    "default_temperature",
+    "results_dir",
+    "uploads_dir",
+];
+
 #[tauri::command]
 pub fn save_setting(app: AppHandle, key: String, value: String) -> Result<(), String> {
+    if !ALLOWED_SETTING_KEYS.contains(&key.as_str()) {
+        return Err(format!("Setting key '{}' is not allowed", key));
+    }
     let db = get_db(&app);
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
     conn.execute(

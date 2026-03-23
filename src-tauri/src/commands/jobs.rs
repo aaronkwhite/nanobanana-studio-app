@@ -182,7 +182,7 @@ pub fn create_t2i_job(app: AppHandle, request: CreateT2IJobRequest) -> Result<Jo
 #[tauri::command]
 pub fn create_i2i_job(app: AppHandle, request: CreateI2IJobRequest) -> Result<JobWithItems, String> {
     // Validate image paths are within uploads directory
-    let uploads_dir = app.path().app_data_dir().map_err(|e| e.to_string())?.join("uploads");
+    let uploads_dir = crate::paths::get_uploads_dir(&app)?;
     for image_path in &request.image_paths {
         let canonical = std::path::Path::new(image_path)
             .canonicalize()
