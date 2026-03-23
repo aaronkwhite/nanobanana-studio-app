@@ -1,6 +1,7 @@
 mod commands;
 mod db;
 mod models;
+pub mod paths;
 
 use db::Database;
 use tauri::Manager;

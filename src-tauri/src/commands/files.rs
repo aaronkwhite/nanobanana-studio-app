@@ -1,63 +1,11 @@
-use crate::db::get_db;
 use crate::models::UploadedFile;
+use crate::paths::{get_uploads_dir, get_results_dir, mime_from_ext};
 use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
 use uuid::Uuid;
 
 const MAX_FILE_SIZE: u64 = 10 * 1024 * 1024; // 10MB
 const ALLOWED_EXTENSIONS: &[&str] = &["jpg", "jpeg", "png", "webp", "gif"];
-
-fn get_uploads_dir(app: &AppHandle) -> Result<PathBuf, String> {
-    let db = get_db(app);
-    let conn = db.conn.lock().map_err(|e| e.to_string())?;
-    let custom: Option<String> = conn
-        .query_row(
-            "SELECT value FROM config WHERE key = 'uploads_dir'",
-            [],
-            |row| row.get(0),
-        )
-        .ok();
-    if let Some(dir) = custom {
-        if !dir.is_empty() {
-            let path = PathBuf::from(dir);
-            std::fs::create_dir_all(&path).map_err(|e| e.to_string())?;
-            return Ok(path);
-        }
-    }
-    let default = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| e.to_string())?
-        .join("uploads");
-    std::fs::create_dir_all(&default).map_err(|e| e.to_string())?;
-    Ok(default)
-}
-
-fn get_results_dir(app: &AppHandle) -> Result<PathBuf, String> {
-    let db = get_db(app);
-    let conn = db.conn.lock().map_err(|e| e.to_string())?;
-    let custom: Option<String> = conn
-        .query_row(
-            "SELECT value FROM config WHERE key = 'results_dir'",
-            [],
-            |row| row.get(0),
-        )
-        .ok();
-    if let Some(dir) = custom {
-        if !dir.is_empty() {
-            let path = PathBuf::from(dir);
-            std::fs::create_dir_all(&path).map_err(|e| e.to_string())?;
-            return Ok(path);
-        }
-    }
-    let default = app
-        .path()
-        .picture_dir()
-        .map_err(|e| e.to_string())?
-        .join("Nana Studio");
-    std::fs::create_dir_all(&default).map_err(|e| e.to_string())?;
-    Ok(default)
-}
 
 #[tauri::command]
 pub fn upload_images(app: AppHandle, files: Vec<String>) -> Result<Vec<UploadedFile>, String> {
@@ -167,13 +115,7 @@ pub fn get_image(app: AppHandle, path: String) -> Result<String, String> {
         .map(|e| e.to_lowercase())
         .unwrap_or_default();
 
-    let mime = match ext.as_str() {
-        "jpg" | "jpeg" => "image/jpeg",
-        "png" => "image/png",
-        "webp" => "image/webp",
-        "gif" => "image/gif",
-        _ => "application/octet-stream",
-    };
+    let mime = mime_from_ext(&ext);
 
     Ok(format!("data:{};base64,{}", mime, base64))
 }

@@ -2,6 +2,7 @@
 use base64::Engine;
 use crate::db::get_db;
 use crate::models::BatchStatus;
+use crate::paths::{get_api_key, get_results_dir, mime_from_ext, validate_batch_name};
 use reqwest::Client;
 use rusqlite::params;
 use serde_json::{json, Value};
@@ -11,45 +12,8 @@ use tauri::{AppHandle, Manager};
 const GEMINI_BASE: &str = "https://generativelanguage.googleapis.com";
 const MODEL: &str = "gemini-3.1-pro-preview";
 
-fn get_api_key(app: &AppHandle) -> Result<String, String> {
-    let db = get_db(app);
-    let conn = db.conn.lock().map_err(|e| e.to_string())?;
-    conn.query_row(
-        "SELECT value FROM config WHERE key = 'gemini_api_key'",
-        [],
-        |row| row.get::<_, String>(0),
-    )
-    .map_err(|_| "No API key configured".to_string())
-}
-
 fn get_app_data_dir(app: &AppHandle) -> Result<std::path::PathBuf, String> {
     app.path().app_data_dir().map_err(|e| e.to_string())
-}
-
-fn get_results_dir(app: &AppHandle) -> Result<std::path::PathBuf, String> {
-    let db = get_db(app);
-    let conn = db.conn.lock().map_err(|e| e.to_string())?;
-    let custom: Option<String> = conn
-        .query_row(
-            "SELECT value FROM config WHERE key = 'results_dir'",
-            [],
-            |row| row.get(0),
-        )
-        .ok();
-    if let Some(dir) = custom {
-        if !dir.is_empty() {
-            let path = std::path::PathBuf::from(dir);
-            fs::create_dir_all(&path).map_err(|e| e.to_string())?;
-            return Ok(path);
-        }
-    }
-    let default = app
-        .path()
-        .picture_dir()
-        .map_err(|e| e.to_string())?
-        .join("Nana Studio");
-    fs::create_dir_all(&default).map_err(|e| e.to_string())?;
-    Ok(default)
 }
 
 #[tauri::command]
@@ -114,13 +78,7 @@ pub async fn submit_batch(app: AppHandle, job_id: String) -> Result<(), String> 
                     .extension()
                     .and_then(|e| e.to_str())
                     .unwrap_or("png");
-                let mime = match ext {
-                    "jpg" | "jpeg" => "image/jpeg",
-                    "png" => "image/png",
-                    "webp" => "image/webp",
-                    "gif" => "image/gif",
-                    _ => "image/png",
-                };
+                let mime = mime_from_ext(ext);
                 parts.push(json!({
                     "inline_data": {
                         "mime_type": mime,
@@ -259,9 +217,7 @@ pub async fn submit_batch(app: AppHandle, job_id: String) -> Result<(), String> 
 #[tauri::command]
 pub async fn poll_batch(app: AppHandle, batch_name: String) -> Result<BatchStatus, String> {
     // Validate batch_name to prevent SSRF
-    if !batch_name.starts_with("batches/") || batch_name.contains("..") || batch_name.contains("://") {
-        return Err("Invalid batch name format".to_string());
-    }
+    validate_batch_name(&batch_name)?;
 
     let api_key = get_api_key(&app)?;
     let client = Client::new();
@@ -299,9 +255,7 @@ pub async fn download_results(
     job_id: String,
 ) -> Result<(), String> {
     // Validate batch_name to prevent SSRF
-    if !batch_name.starts_with("batches/") || batch_name.contains("..") || batch_name.contains("://") {
-        return Err("Invalid batch name format".to_string());
-    }
+    validate_batch_name(&batch_name)?;
 
     let api_key = get_api_key(&app)?;
     let client = Client::new();
@@ -463,9 +417,7 @@ pub async fn download_results(
 #[tauri::command]
 pub async fn cancel_batch(app: AppHandle, batch_name: String) -> Result<(), String> {
     // Validate batch_name
-    if !batch_name.starts_with("batches/") || batch_name.contains("..") {
-        return Err("Invalid batch name format".to_string());
-    }
+    validate_batch_name(&batch_name)?;
 
     let api_key = get_api_key(&app)?;
     let client = Client::new();

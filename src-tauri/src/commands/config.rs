@@ -113,15 +113,3 @@ pub fn get_default_results_dir(app: AppHandle) -> Result<String, String> {
     Ok(dir.to_string_lossy().to_string())
 }
 
-#[allow(dead_code)]
-pub fn get_api_key(app: &AppHandle) -> Result<String, String> {
-    let db = get_db(app);
-    let conn = db.conn.lock().map_err(|e| e.to_string())?;
-
-    conn.query_row(
-        "SELECT value FROM config WHERE key = ?1",
-        params![API_KEY_KEY],
-        |row| row.get(0),
-    )
-    .map_err(|_| "API key not configured".to_string())
-}
