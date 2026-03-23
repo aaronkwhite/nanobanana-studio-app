@@ -26,24 +26,7 @@ pub fn get_jobs(app: AppHandle, status: Option<String>) -> Result<Vec<Job>, Stri
 
     let mut stmt = conn.prepare(sql).map_err(|e| e.to_string())?;
     let jobs = stmt
-        .query_map([], |row| {
-            Ok(Job {
-                id: row.get(0)?,
-                status: row.get(1)?,
-                mode: row.get(2)?,
-                prompt: row.get(3)?,
-                output_size: row.get(4)?,
-                temperature: row.get(5)?,
-                aspect_ratio: row.get(6)?,
-                batch_job_name: row.get(7)?,
-                batch_temp_file: row.get(8)?,
-                total_items: row.get(9)?,
-                completed_items: row.get(10)?,
-                failed_items: row.get(11)?,
-                created_at: row.get(12)?,
-                updated_at: row.get(13)?,
-            })
-        })
+        .query_map([], Job::from_row)
         .map_err(|e| e.to_string())?
         .collect::<Result<Vec<_>, _>>()
         .map_err(|e| e.to_string())?;
@@ -63,24 +46,7 @@ pub fn get_job(app: AppHandle, id: String) -> Result<JobWithItems, String> {
                     created_at, updated_at
              FROM jobs WHERE id = ?1",
             params![id],
-            |row| {
-                Ok(Job {
-                    id: row.get(0)?,
-                    status: row.get(1)?,
-                    mode: row.get(2)?,
-                    prompt: row.get(3)?,
-                    output_size: row.get(4)?,
-                    temperature: row.get(5)?,
-                    aspect_ratio: row.get(6)?,
-                    batch_job_name: row.get(7)?,
-                    batch_temp_file: row.get(8)?,
-                    total_items: row.get(9)?,
-                    completed_items: row.get(10)?,
-                    failed_items: row.get(11)?,
-                    created_at: row.get(12)?,
-                    updated_at: row.get(13)?,
-                })
-            },
+            Job::from_row,
         )
         .map_err(|e| e.to_string())?;
 
