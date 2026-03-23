@@ -11,8 +11,6 @@
   import { calculateCost } from '$lib/types';
   import type { Job, JobItem } from '$lib/types';
   import { celebrateBatchComplete } from '$lib/utils/confetti';
-  import { get } from 'svelte/store';
-
   interface Props {
     job: Job;
   }
@@ -25,7 +23,7 @@
   const isActive = $derived(job.status === 'pending' || job.status === 'processing');
   const isCompleted = $derived(job.status === 'completed');
   const isFailed = $derived(job.status === 'failed');
-  const canExpand = $derived(isCompleted || (isFailed && get(mockMode)));
+  const canExpand = $derived(isCompleted || (isFailed && $mockMode));
   const progress = $derived(job.total_items > 0 ? (job.completed_items / job.total_items) * 100 : 0);
   const cost = $derived(calculateCost(job.output_size, job.total_items));
 
@@ -40,7 +38,7 @@
     if (!canExpand) return;
     expanded = !expanded;
     if (expanded && items.length === 0) {
-      if (get(mockMode)) {
+      if ($mockMode) {
         items = createMockJobItems(job.id);
       } else {
         const result = await getJob(job.id);

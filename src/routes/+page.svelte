@@ -13,23 +13,31 @@
   import { mockMode } from '$lib/utils/mock-mode';
   import { createMockJobs } from '$lib/utils/mock-data';
   import type { JobMode, UploadedFile, OutputSize, AspectRatio } from '$lib/types';
-  import { get } from 'svelte/store';
-
   let mode: JobMode = $state('text-to-image');
   let prompts: string[] = $state([]);
   let i2iFiles: UploadedFile[] = $state([]);
   let i2iPrompt: string = $state('');
   let submitting: boolean = $state(false);
 
-  const defaults = get(settings);
-  let outputSize: OutputSize = $state(defaults.output_size);
-  let aspectRatio: AspectRatio = $state(defaults.aspect_ratio);
-  let temperature: number = $state(defaults.temperature);
+  let outputSize: OutputSize = $state('1K');
+  let aspectRatio: AspectRatio = $state('16:9');
+  let temperature: number = $state(1);
+
+  let settingsLoaded = false;
+  $effect(() => {
+    const s = $settings;
+    if (!settingsLoaded && s.output_size) {
+      outputSize = s.output_size;
+      aspectRatio = s.aspect_ratio;
+      temperature = s.temperature;
+      settingsLoaded = true;
+    }
+  });
 
   const itemCount = $derived(mode === 'text-to-image' ? prompts.length : i2iFiles.length);
 
   onMount(() => {
-    if (get(mockMode)) {
+    if ($mockMode) {
       // Load mock data instead of real API calls
       jobs.setJobs(createMockJobs());
     } else {
@@ -137,6 +145,7 @@
 </main>
 
 <!-- Dev tools: mock mode toggle -->
+{#if dev}
 <div class="fixed bottom-4 right-4 z-50">
   <button
     onclick={() => { mockMode.toggle(); window.location.reload(); }}
@@ -145,3 +154,4 @@
     {$mockMode ? 'Mock Mode' : 'Live Mode'}
   </button>
 </div>
+{/if}

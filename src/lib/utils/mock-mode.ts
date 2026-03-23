@@ -1,5 +1,5 @@
 // src/lib/utils/mock-mode.ts
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
 import { browser } from '$app/environment';
 
 const STORAGE_KEY = 'nanobanana-mock-mode';
@@ -11,10 +11,7 @@ function createMockModeStore() {
   return {
     subscribe,
     toggle() {
-      let current = false;
-      subscribe((v) => {
-        current = v;
-      })();
+      const current = get({ subscribe });
       const next = !current;
       if (browser) localStorage.setItem(STORAGE_KEY, String(next));
       set(next);
