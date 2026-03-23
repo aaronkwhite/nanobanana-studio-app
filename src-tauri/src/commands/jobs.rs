@@ -1,7 +1,7 @@
 use crate::db::get_db;
 use crate::models::{CreateI2IJobRequest, CreateT2IJobRequest, Job, JobItem, JobWithItems};
 use rusqlite::params;
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 use uuid::Uuid;
 
 #[tauri::command]

@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.4.2] - 2026-03-23
+
+### Code Review Cleanup
+
+#### DRY Refactoring
+- **Shared select options** — extracted `sizeOptions`, `ratioOptions`, `tempOptions` to `utils/options.ts`, eliminating duplication between PromptForm and settings page
+- **Shared Tabs component** — settings page now uses the `<Tabs>` component instead of a copy-pasted 50-line tab pill implementation (-48 lines)
+- **Shared Rust paths module** — extracted `get_results_dir`, `get_uploads_dir`, `get_api_key`, `mime_from_ext`, and `validate_batch_name` into `paths.rs`, eliminating duplicates across `files.rs`, `batch.rs`, and `config.rs`
+- **`Job::from_row`** — extracted duplicate 14-column row mapping closures in `jobs.rs` to a shared method on the Job struct
+- **`isActiveJob` predicate** — extracted `pending || processing` check used in 4+ places to `utils/jobs.ts`
+- **`submitAndTrack` helper** — deduplicated identical post-submit logic in T2I and I2I branches
+
+#### Security Fixes
+- **`save_setting` key allowlist** — frontend can no longer overwrite arbitrary config keys (e.g., the API key) via the generic settings endpoint
+- **I2I path validation** — now uses `get_uploads_dir()` to honor custom upload directories instead of only checking the default path
+- **SSRF validation consistency** — `cancel_batch` now checks for `://` in batch names, matching `poll_batch` and `download_results`
+
+#### Reactivity Bug Fixes
+- **Stale settings snapshot** — replaced `get(settings)` one-time read with a reactive `$effect` that syncs after async load
+- **Mock mode dev guard** — toggle now correctly hidden in production builds via `{#if dev}`
+- **Reactive `$mockMode`** — `JobCard.canExpand` now uses `$mockMode` instead of `get(mockMode)` for proper reactive dependency tracking
+- **Mock mode toggle** — replaced subscribe-then-unsubscribe anti-pattern with `get()`
+
+#### CSS Design Tokens
+- **`.titlebar-glass` utility** — replaced duplicated inline backdrop-filter styles on both titlebars
+- **Neutral tint tokens** — `--neutral-tint`, `--neutral-tint-strong`, `--neutral-border`, `--neutral-border-hover` replace scattered `rgba(128,128,128,...)` magic numbers
+- **`--traffic-light-offset`** — replaces hardcoded `86px` in two places
+- **`--accent-glow`** — used for ImageDropZone active state instead of hardcoded rose-gold rgba
+
 ## [0.4.1] - 2026-03-22
 
 ### UI Polish
