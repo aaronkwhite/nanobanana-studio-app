@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, tick } from 'svelte';
+  import { onMount } from 'svelte';
   import { ArrowLeft, Eye, EyeOff, Sun, Moon, Monitor, Key, RotateCcw, ExternalLink, Heart, Coffee } from 'lucide-svelte';
   import { open } from '@tauri-apps/plugin-shell';
   import { open as dialogOpen } from '@tauri-apps/plugin-dialog';
@@ -11,7 +11,7 @@
       window.open(url, '_blank');
     });
   }
-  import { Button, Input, Select } from '$lib/components/ui';
+  import { Button, Input, Select, Tabs } from '$lib/components/ui';
   import { config } from '$lib/stores/config';
   import { theme } from '$lib/stores/theme';
   import { settings } from '$lib/stores/settings';
@@ -27,23 +27,6 @@
   let resultsDir: string = $state('');
   let defaultResultsDir: string = $state('');
   let appVersion: string = $state('');
-  let settingsTabEls: HTMLButtonElement[] = [];
-  let settingsPillEl: HTMLDivElement | undefined = $state();
-  let settingsPillStyle = $state('');
-
-  function updateSettingsPill() {
-    const idx = tabs.findIndex(t => t.value === activeTab);
-    const el = settingsTabEls[idx];
-    if (el) {
-      settingsPillStyle = `width: ${el.offsetWidth}px; transform: translateX(${el.offsetLeft - 2}px);`;
-    }
-  }
-
-  $effect(() => {
-    void activeTab;
-    tick().then(updateSettingsPill);
-  });
-
   async function loadDirectories() {
     resultsDir = (await cmd.getSetting('results_dir')) ?? '';
     defaultResultsDir = await cmd.getDefaultResultsDir();
@@ -118,22 +101,7 @@
   </div>
 
   <!-- Tab navigation -->
-  <div class="settings-tabs flex relative rounded-[10px] p-[2px]">
-    <div
-      class="settings-pill absolute top-[2px] h-[calc(100%-4px)] rounded-[var(--radius-md)]"
-      bind:this={settingsPillEl}
-      style="transition: transform 250ms cubic-bezier(0.22, 1, 0.36, 1), width 250ms cubic-bezier(0.22, 1, 0.36, 1); {settingsPillStyle}"
-    ></div>
-    {#each tabs as tab, i}
-      <button
-        bind:this={settingsTabEls[i]}
-        onclick={() => { activeTab = tab.value; }}
-        class="relative z-[1] flex items-center gap-1.5 flex-1 justify-center rounded-[var(--radius-md)] px-3 py-[5px] text-xs cursor-pointer bg-transparent border-none font-sans tracking-tight transition-colors duration-200 {activeTab === tab.value ? 'font-medium text-[var(--text)]' : 'font-normal text-[var(--muted)] hover:text-[var(--text)]'}"
-      >
-        {tab.label}
-      </button>
-    {/each}
-  </div>
+  <Tabs tabs={tabs} bind:value={activeTab} />
 
   <!-- General -->
   {#if activeTab === 'general'}
@@ -360,21 +328,5 @@
 <style>
   .titlebar {
     -webkit-app-region: drag;
-  }
-  .settings-tabs {
-    background: rgba(128, 128, 128, 0.08);
-    border: 0.5px solid rgba(128, 128, 128, 0.12);
-  }
-  .settings-pill {
-    background: var(--surface);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
-  }
-  :global([data-theme="dark"]) .settings-tabs {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.08);
-  }
-  :global([data-theme="dark"]) .settings-pill {
-    background: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), 0 0 0 0.5px rgba(255, 255, 255, 0.06);
   }
 </style>
