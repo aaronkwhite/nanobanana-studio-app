@@ -92,6 +92,6 @@
   }
   .drop-zone--active {
     border-color: var(--accent);
-    background: rgba(237, 100, 166, 0.15);
+    background: var(--accent-glow);
   }
 </style>

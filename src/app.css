@@ -55,6 +55,15 @@
   --transition-fast: 0.15s ease;
   --transition-base: 0.2s ease;
   --transition-slow: 0.25s ease;
+
+  /* --- Layout --- */
+  --traffic-light-offset: 86px;
+
+  /* --- Neutral tints --- */
+  --neutral-tint: rgba(128, 128, 128, 0.06);
+  --neutral-tint-strong: rgba(128, 128, 128, 0.08);
+  --neutral-border: rgba(128, 128, 128, 0.12);
+  --neutral-border-hover: rgba(128, 128, 128, 0.2);
 }
 
 /* ============================================
@@ -160,6 +169,13 @@ body {
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
+}
+
+.titlebar-glass {
+  background: var(--titlebar-bg, var(--glass-bg));
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+  border-bottom: 1px solid var(--glass-border);
 }
 
 .glass-overlay {

@@ -79,10 +79,9 @@
 <!-- Settings titlebar (draggable) -->
 <div
   data-tauri-drag-region
-  class="sticky top-0 z-50 border-b border-[var(--glass-border)] titlebar"
-  style="background: var(--titlebar-bg, var(--glass-bg)); backdrop-filter: blur(8px) saturate(120%); -webkit-backdrop-filter: blur(8px) saturate(120%);"
+  class="sticky top-0 z-50 titlebar titlebar-glass"
 >
-  <div data-tauri-drag-region class="flex h-12 items-center justify-center px-4" style="padding-left: 86px;">
+  <div data-tauri-drag-region class="flex h-12 items-center justify-center px-4" style="padding-left: var(--traffic-light-offset);">
     <span class="text-sm font-semibold text-[var(--text)]">Nana Studio</span>
   </div>
 </div>

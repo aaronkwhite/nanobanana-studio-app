@@ -14,8 +14,8 @@
 
   const variantClasses = {
     primary: 'btn-primary bg-[var(--accent)] text-[var(--accent-text)] shadow-[0_0.5px_1px_rgba(0,0,0,0.1)] hover:opacity-[0.88] active:translate-y-[0.5px] active:opacity-80',
-    secondary: 'btn-secondary bg-[rgba(128,128,128,0.06)] text-[var(--text)] border-[0.5px] border-[rgba(0,0,0,0.06)] hover:bg-[rgba(128,128,128,0.1)] active:translate-y-[0.5px]',
-    ghost: 'btn-ghost text-[var(--muted)] hover:text-[var(--text)] hover:bg-[rgba(128,128,128,0.06)] active:translate-y-[0.5px]',
+    secondary: 'btn-secondary bg-[var(--neutral-tint)] text-[var(--text)] border-[0.5px] border-[rgba(0,0,0,0.06)] hover:bg-[rgba(128,128,128,0.1)] active:translate-y-[0.5px]',
+    ghost: 'btn-ghost text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--neutral-tint)] active:translate-y-[0.5px]',
     danger: 'btn-danger bg-[var(--error)] text-white shadow-[0_0.5px_1px_rgba(0,0,0,0.1)] hover:opacity-[0.88] active:translate-y-[0.5px] active:opacity-80',
   };
 
