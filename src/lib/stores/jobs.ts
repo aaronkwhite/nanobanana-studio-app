@@ -2,6 +2,7 @@
 import { writable, derived } from 'svelte/store';
 import type { Job, JobWithItems, BatchStatus, GeminiBatchState } from '$lib/types';
 import * as cmd from '$lib/utils/commands';
+import { isActiveJob } from '$lib/utils/jobs';
 
 function createJobsStore() {
   const { subscribe, set, update } = writable<Job[]>([]);
@@ -13,9 +14,7 @@ function createJobsStore() {
     const unsub = subscribe((j) => (currentJobs = j));
     unsub();
 
-    const activeJobs = currentJobs.filter(
-      (j) => j.status === 'pending' || j.status === 'processing'
-    );
+    const activeJobs = currentJobs.filter(isActiveJob);
 
     if (activeJobs.length === 0) {
       isPolling = false;
@@ -69,9 +68,7 @@ function createJobsStore() {
     let updatedJobs: Job[] = [];
     const unsub2 = subscribe((j) => (updatedJobs = j));
     unsub2();
-    const hasActiveJobs = updatedJobs.some(
-      (j) => j.status === 'pending' || j.status === 'processing'
-    );
+    const hasActiveJobs = updatedJobs.some(isActiveJob);
 
     if (hasActiveJobs) {
       pollTimeout = setTimeout(pollActiveJobs, 2000);
@@ -139,5 +136,5 @@ function createJobsStore() {
 export const jobs = createJobsStore();
 
 export const activeJobsCount = derived(jobs, ($jobs) =>
-  $jobs.filter((j) => j.status === 'pending' || j.status === 'processing').length
+  $jobs.filter(isActiveJob).length
 );

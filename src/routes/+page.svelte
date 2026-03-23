@@ -12,7 +12,7 @@
   import { settings } from '$lib/stores/settings';
   import { mockMode } from '$lib/utils/mock-mode';
   import { createMockJobs } from '$lib/utils/mock-data';
-  import type { JobMode, UploadedFile, OutputSize, AspectRatio } from '$lib/types';
+  import type { Job, JobMode, UploadedFile, OutputSize, AspectRatio } from '$lib/types';
   let mode: JobMode = $state('text-to-image');
   let prompts: string[] = $state([]);
   let i2iFiles: UploadedFile[] = $state([]);
@@ -57,6 +57,14 @@
     return () => jobs.stopPolling();
   });
 
+  function submitAndTrack(result: { job: Job }) {
+    jobs.addJob(result.job);
+    invoke('submit_batch', { jobId: result.job.id }).catch((err) => {
+      console.error('Failed to submit batch:', err);
+      jobs.updateJob({ ...result.job, status: 'failed' });
+    });
+  }
+
   async function handleSubmit() {
     if (submitting) return;
     submitting = true;
@@ -70,11 +78,7 @@
           temperature,
           aspect_ratio: aspectRatio,
         });
-        jobs.addJob(result.job);
-        invoke('submit_batch', { jobId: result.job.id }).catch((err) => {
-          console.error('Failed to submit batch:', err);
-          jobs.updateJob({ ...result.job, status: 'failed' });
-        });
+        submitAndTrack(result);
         prompts = [];
       } else {
         const result = await createI2IJob({
@@ -84,11 +88,7 @@
           temperature,
           aspect_ratio: aspectRatio,
         });
-        jobs.addJob(result.job);
-        invoke('submit_batch', { jobId: result.job.id }).catch((err) => {
-          console.error('Failed to submit batch:', err);
-          jobs.updateJob({ ...result.job, status: 'failed' });
-        });
+        submitAndTrack(result);
         i2iFiles = [];
         i2iPrompt = '';
       }

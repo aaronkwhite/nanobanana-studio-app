@@ -10,6 +10,7 @@
   import { createMockJobItems } from '$lib/utils/mock-data';
   import { calculateCost } from '$lib/types';
   import type { Job, JobItem } from '$lib/types';
+  import { isActiveJob } from '$lib/utils/jobs';
   import { celebrateBatchComplete } from '$lib/utils/confetti';
   interface Props {
     job: Job;
@@ -20,7 +21,7 @@
   let items: JobItem[] = $state([]);
   let prevStatus: string = $state(job.status);
 
-  const isActive = $derived(job.status === 'pending' || job.status === 'processing');
+  const isActive = $derived(isActiveJob(job));
   const isCompleted = $derived(job.status === 'completed');
   const isFailed = $derived(job.status === 'failed');
   const canExpand = $derived(isCompleted || (isFailed && $mockMode));
