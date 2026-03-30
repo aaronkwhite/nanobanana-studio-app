@@ -1,59 +1,58 @@
+// src/tests/setup.ts
 import '@testing-library/jest-dom/vitest';
 import { vi } from 'vitest';
 
-// Mock $app/environment
+// Mock SvelteKit environment
 vi.mock('$app/environment', () => ({
-	browser: true
+  browser: true,
 }));
 
-// Mock Tauri APIs
+// Mock Tauri API
 vi.mock('@tauri-apps/api/core', () => ({
-	invoke: vi.fn()
+  invoke: vi.fn(),
 }));
 
+// Mock Tauri dialog plugin
 vi.mock('@tauri-apps/plugin-dialog', () => ({
-	open: vi.fn()
+  open: vi.fn(),
+}));
+
+// Mock canvas-confetti
+vi.mock('canvas-confetti', () => ({
+  default: vi.fn(),
 }));
 
 // Mock localStorage
-const localStorageMock = {
-	store: {} as Record<string, string>,
-	getItem: vi.fn((key: string) => localStorageMock.store[key] || null),
-	setItem: vi.fn((key: string, value: string) => {
-		localStorageMock.store[key] = value;
-	}),
-	removeItem: vi.fn((key: string) => {
-		delete localStorageMock.store[key];
-	}),
-	clear: () => {
-		localStorageMock.store = {};
-		vi.clearAllMocks();
-	}
+const store: Record<string, string> = {};
+export const localStorageMock = {
+  getItem: vi.fn((key: string) => store[key] ?? null),
+  setItem: vi.fn((key: string, value: string) => {
+    store[key] = value;
+  }),
+  removeItem: vi.fn((key: string) => {
+    delete store[key];
+  }),
+  clear: vi.fn(() => {
+    Object.keys(store).forEach((key) => delete store[key]);
+  }),
 };
-
-Object.defineProperty(global, 'localStorage', {
-	value: localStorageMock,
-	writable: true
-});
+Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock });
 
 // Mock matchMedia
-Object.defineProperty(global, 'matchMedia', {
-	value: vi.fn(() => ({
-		matches: false,
-		addEventListener: vi.fn(),
-		removeEventListener: vi.fn()
-	})),
-	writable: true
+Object.defineProperty(globalThis, 'matchMedia', {
+  value: vi.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  })),
 });
 
 // Mock navigator.clipboard
-Object.defineProperty(global.navigator, 'clipboard', {
-	value: {
-		writeText: vi.fn().mockResolvedValue(undefined),
-		readText: vi.fn().mockResolvedValue('')
-	},
-	writable: true
+Object.defineProperty(navigator, 'clipboard', {
+  value: {
+    writeText: vi.fn().mockResolvedValue(undefined),
+    readText: vi.fn().mockResolvedValue(''),
+  },
+  writable: true,
 });
-
-// Export for use in tests
-export { localStorageMock };

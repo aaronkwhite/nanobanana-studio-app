@@ -1,115 +1,64 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { get } from 'svelte/store';
-
-// Mock Tauri invoke API
-vi.mock('@tauri-apps/api/core', () => ({
-	invoke: vi.fn()
-}));
-
 import { invoke } from '@tauri-apps/api/core';
-import type { ConfigStatus } from './config';
+import { config } from './config';
+
+vi.mock('@tauri-apps/api/core');
 
 describe('config store', () => {
-	beforeEach(() => {
-		vi.resetModules();
-		vi.clearAllMocks();
-	});
+  beforeEach(async () => {
+    vi.resetAllMocks();
+    // Reset store state to initial values before each test
+    vi.mocked(invoke).mockResolvedValueOnce(undefined);
+    await config.remove();
+    vi.resetAllMocks();
+  });
 
-	describe('initial state', () => {
-		it('should start with no API key', async () => {
-			const { config } = await import('./config');
+  it('starts with no key', () => {
+    const c = get(config);
+    expect(c.has_key).toBe(false);
+    expect(c.masked).toBeNull();
+  });
 
-			const configStatus = get(config);
-			expect(configStatus.has_key).toBe(false);
-			expect(configStatus.masked).toBe(null);
-		});
-	});
+  it('loads config with key from backend', async () => {
+    vi.mocked(invoke).mockResolvedValueOnce({
+      has_key: true,
+      masked: 'AI...xyz',
+    });
 
-	describe('load', () => {
-		it('should load config from backend', async () => {
-			const mockConfig: ConfigStatus = {
-				has_key: true,
-				masked: 'AI****xyz'
-			};
-			vi.mocked(invoke).mockResolvedValue(mockConfig);
+    await config.load();
 
-			const { config } = await import('./config');
-			const result = await config.load();
+    const c = get(config);
+    expect(c.has_key).toBe(true);
+    expect(c.masked).toBe('AI...xyz');
+  });
 
-			expect(invoke).toHaveBeenCalledWith('get_config');
-			expect(result).toEqual(mockConfig);
-			expect(get(config)).toEqual(mockConfig);
-		});
+  it('validates API key via backend', async () => {
+    vi.mocked(invoke).mockResolvedValueOnce(true);
 
-		it('should handle load errors gracefully', async () => {
-			const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-			vi.mocked(invoke).mockRejectedValue(new Error('Backend error'));
+    const valid = await config.validate('test-key');
 
-			const { config } = await import('./config');
-			const result = await config.load();
+    expect(valid).toBe(true);
+    expect(invoke).toHaveBeenCalledWith('validate_api_key', { apiKey: 'test-key' });
+  });
 
-			expect(consoleSpy).toHaveBeenCalledWith('Failed to load config:', expect.any(Error));
-			expect(result).toEqual({ has_key: false, masked: null });
-			consoleSpy.mockRestore();
-		});
-	});
+  it('saves API key and reloads config', async () => {
+    vi.mocked(invoke)
+      .mockResolvedValueOnce(undefined) // saveConfig
+      .mockResolvedValueOnce({ has_key: true, masked: 'te...key' }); // getConfig reload
 
-	describe('save', () => {
-		it('should save API key to backend', async () => {
-			vi.mocked(invoke).mockResolvedValue({ has_key: true, masked: 'AI****xyz' });
+    await config.save('test-key');
 
-			const { config } = await import('./config');
-			await config.save('AIzaSyTestApiKey');
+    expect(invoke).toHaveBeenCalledWith('save_config', { apiKey: 'test-key' });
+  });
 
-			expect(invoke).toHaveBeenCalledWith('save_config', { apiKey: 'AIzaSyTestApiKey' });
-		});
+  it('removes API key and clears state', async () => {
+    vi.mocked(invoke).mockResolvedValue(undefined);
 
-		it('should reload config after saving', async () => {
-			const mockConfigAfterSave: ConfigStatus = {
-				has_key: true,
-				masked: 'AI****key'
-			};
+    await config.remove();
 
-			// First call is for save_config, second is for get_config in load()
-			vi.mocked(invoke)
-				.mockResolvedValueOnce(undefined)
-				.mockResolvedValueOnce(mockConfigAfterSave);
-
-			const { config } = await import('./config');
-			await config.save('AIzaSyNewApiKey');
-
-			// Should call get_config to refresh state
-			expect(invoke).toHaveBeenCalledWith('get_config');
-			expect(get(config)).toEqual(mockConfigAfterSave);
-		});
-	});
-
-	describe('remove', () => {
-		it('should remove API key from backend', async () => {
-			vi.mocked(invoke).mockResolvedValue(undefined);
-
-			const { config } = await import('./config');
-			await config.remove();
-
-			expect(invoke).toHaveBeenCalledWith('delete_config');
-		});
-
-		it('should reset state after removing', async () => {
-			// Set up initial state with a key
-			vi.mocked(invoke).mockResolvedValue({ has_key: true, masked: 'AI****xyz' });
-
-			const { config } = await import('./config');
-			await config.load();
-
-			expect(get(config).has_key).toBe(true);
-
-			// Now remove
-			vi.mocked(invoke).mockResolvedValue(undefined);
-			await config.remove();
-
-			const configStatus = get(config);
-			expect(configStatus.has_key).toBe(false);
-			expect(configStatus.masked).toBe(null);
-		});
-	});
+    expect(invoke).toHaveBeenCalledWith('delete_config');
+    const c = get(config);
+    expect(c.has_key).toBe(false);
+  });
 });

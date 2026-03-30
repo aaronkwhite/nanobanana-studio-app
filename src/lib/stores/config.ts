@@ -1,38 +1,30 @@
+// src/lib/stores/config.ts
 import { writable } from 'svelte/store';
-import { invoke } from '@tauri-apps/api/core';
-
-export interface ConfigStatus {
-	has_key: boolean;
-	masked: string | null;
-}
+import type { ConfigStatus } from '$lib/types';
+import * as cmd from '$lib/utils/commands';
 
 function createConfigStore() {
-	const { subscribe, set } = writable<ConfigStatus>({
-		has_key: false,
-		masked: null
-	});
+  const { subscribe, set } = writable<ConfigStatus>({ has_key: false, masked: null });
 
-	return {
-		subscribe,
-		async load() {
-			try {
-				const config = await invoke<ConfigStatus>('get_config');
-				set(config);
-				return config;
-			} catch (error) {
-				console.error('Failed to load config:', error);
-				return { has_key: false, masked: null };
-			}
-		},
-		async save(apiKey: string) {
-			await invoke('save_config', { apiKey });
-			await this.load();
-		},
-		async remove() {
-			await invoke('delete_config');
-			set({ has_key: false, masked: null });
-		}
-	};
+  return {
+    subscribe,
+    async load() {
+      const status = await cmd.getConfig();
+      set(status);
+      return status;
+    },
+    async save(apiKey: string) {
+      await cmd.saveConfig(apiKey);
+      await this.load();
+    },
+    async remove() {
+      await cmd.deleteConfig();
+      set({ has_key: false, masked: null });
+    },
+    async validate(apiKey: string): Promise<boolean> {
+      return cmd.validateApiKey(apiKey);
+    },
+  };
 }
 
 export const config = createConfigStore();

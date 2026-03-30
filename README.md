@@ -1,24 +1,28 @@
-# Nanobanana Studio
+# Nana Studio
 
-A desktop application for batch image generation powered by Google's Gemini API (`gemini-3.1-flash-image-preview`). Built with Tauri, SvelteKit, and Tailwind CSS.
+*Peel. Prompt. Produce.*
+
+A macOS desktop app for batch media generation using Google's Gemini API. Submit dozens of prompts as a single batch job and get results at **50% of the standard API cost**.
+
+Built with Tauri v2, SvelteKit 2, Svelte 5, and Rust.
 
 ## Features
 
-- **Text-to-Image**: Generate images from text prompts
-- **Image-to-Image**: Transform existing images with prompts
-- **Batch Processing**: Process multiple images or prompts in a single job
-- **Multiple Output Sizes**: 0.5K, 1K, 2K, and 4K resolution options
-- **Flexible Aspect Ratios**: 1:1, 3:2, 2:3, 4:3, 3:4, 16:9, 9:16, 4:5, 5:4, 21:9
-- **Job Management**: Track progress, view results, and manage generation jobs
-- **Dark/Light Theme**: System-aware theming with manual override
+- **Batch Image Generation** — submit multiple prompts at once via the Gemini Batch API
+- **Text-to-Image** — generate images from text prompts
+- **Image-to-Image** — transform existing images with prompts
+- **Job Tracking** — real-time progress, expand to view results inline
+- **Native Drag & Drop** — drop images from Finder for I2I workflows
+- **Dark/Light Theme** — system-aware theming with manual override
+- **Output to ~/Pictures** — generated images save to `~/Pictures/Nana Studio/` by default
 
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) (v18+)
 - [Rust](https://rustup.rs/) (1.77.2+)
-- [Gemini API Key](https://makersuite.google.com/app/apikey)
+- [Gemini API Key](https://aistudio.google.com/apikey)
 
-## Installation
+## Getting Started
 
 ```bash
 # Clone the repository
@@ -29,46 +33,91 @@ cd nanobanana-studio-app
 npm install
 
 # Run in development mode
-npm run tauri:dev
+npm run tauri dev
 
 # Build for production
-npm run tauri:build
+npm run tauri build
 ```
 
 ## Configuration
 
-1. Launch the application
-2. Click the settings icon in the header
-3. Enter your Gemini API key (starts with "AI")
-4. Your key is stored locally in an SQLite database
+1. Launch the app
+2. Click the Settings gear in the header
+3. Enter your Gemini API key under **General > Gemini API Key**
+4. Click **Test & Save** — the key is validated against Gemini before storing
 
 ## Development
 
 ```bash
-# Run frontend only
+# Run frontend only (no Tauri)
 npm run dev
 
-# Run with Tauri (full app)
-npm run tauri:dev
+# Run full app with Tauri
+npm run tauri dev
 
-# Run tests
-npm test
-
-# Run tests once
+# Run frontend tests (Vitest)
 npm run test:run
+
+# Run Rust tests
+cd src-tauri && cargo test
+
+# Run frontend tests in watch mode
+npm test
 
 # Type checking
 npm run check
 ```
 
+## Testing
+
+**Frontend (Vitest):** 42 tests across 10 files
+- Stores: settings, config, jobs, theme
+- Utilities: options, isActiveJob
+- Components: Header, JobCard, Button
+- Types: constants, calculateCost
+
+**Backend (Rust):** 15 tests
+- Security: save_setting key allowlist, batch name validation (SSRF/path traversal)
+- Pure functions: MIME type mapping, API key masking
+
 ## Tech Stack
 
-- **Frontend**: SvelteKit 2, Svelte 5, Tailwind CSS 4
-- **Backend**: Tauri 2, Rust
-- **AI Model**: Gemini 3.1 Flash (`gemini-3.1-flash-image-preview`)
-- **Database**: SQLite (via rusqlite)
-- **Testing**: Vitest, Testing Library
+- **Frontend**: SvelteKit 2, Svelte 5 (runes), Tailwind CSS 4
+- **Backend**: Tauri v2, Rust
+- **Database**: SQLite (rusqlite, WAL mode)
+- **Icons**: Lucide (v1 RC)
+- **Testing**: Vitest + Testing Library (frontend), cargo test (backend)
+
+## Design System
+
+- **Color**: Moonlight Silver neutrals + Rose Gold accent
+- **Typography**: SF Pro system font stack
+- **Components**: Glass morphism cards, sliding pill tabs, translucent titlebar
+- **Themes**: Light and dark with `--titlebar-bg`, `--glass-bg`, `--neutral-tint` tokens
+
+## Project Structure
+
+```
+src/                          # SvelteKit frontend
+  lib/
+    components/               # Svelte components
+      ui/                     # Design system primitives (Button, Select, Tabs, etc.)
+    stores/                   # Svelte stores (settings, config, jobs, theme)
+    types/                    # TypeScript types matching Rust structs
+    utils/                    # Utilities (commands, options, jobs, mock-mode)
+  routes/                     # Pages (+page.svelte, settings/+page.svelte)
+  app.css                     # Design tokens and glass utilities
+src-tauri/                    # Rust backend
+  src/
+    commands/                 # Tauri IPC commands (config, jobs, files, batch)
+    paths.rs                  # Shared path resolution, API key, MIME, validation
+    models.rs                 # Data structures (Job, JobItem, etc.)
+    db.rs                     # SQLite database initialization
+    lib.rs                    # Tauri app setup and command registration
+static/
+  images/                     # Logo SVGs (mark, full, inverse)
+```
 
 ## License
 
-MIT - see [LICENSE](LICENSE)
+MIT

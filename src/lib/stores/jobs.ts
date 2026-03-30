@@ -1,156 +1,140 @@
+// src/lib/stores/jobs.ts
 import { writable, derived } from 'svelte/store';
-import { invoke } from '@tauri-apps/api/core';
-
-export interface Job {
-	id: string;
-	status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
-	mode: 'text-to-image' | 'image-to-image';
-	prompt: string;
-	output_size: '0.5K' | '1K' | '2K' | '4K';
-	temperature: number;
-	aspect_ratio: string;
-	batch_job_name: string | null;
-	batch_temp_file: string | null;
-	total_items: number;
-	completed_items: number;
-	failed_items: number;
-	created_at: string;
-	updated_at: string;
-}
-
-export interface JobItem {
-	id: string;
-	job_id: string;
-	input_prompt: string | null;
-	input_image_path: string | null;
-	output_image_path: string | null;
-	status: 'pending' | 'processing' | 'completed' | 'failed';
-	error: string | null;
-	created_at: string;
-	updated_at: string;
-}
-
-export interface JobWithItems {
-	job: Job;
-	items: JobItem[];
-}
-
-// Prices per output size (NB2 Batch API pricing)
-export const OUTPUT_SIZES = {
-	'0.5K': { label: '0.5K ($0.0225)', price: 0.0225 },
-	'1K': { label: '1K ($0.0335)', price: 0.0335 },
-	'2K': { label: '2K ($0.0505)', price: 0.0505 },
-	'4K': { label: '4K ($0.0755)', price: 0.0755 }
-} as const;
-
-export const ASPECT_RATIOS = {
-	'1:1': 'Square',
-	'16:9': 'Wide',
-	'9:16': 'Portrait',
-	'4:3': 'Landscape',
-	'3:4': 'Tall',
-	'3:2': 'Photo',
-	'2:3': 'Photo Portrait',
-	'4:5': 'Social',
-	'5:4': 'Social Wide',
-	'21:9': 'Ultrawide'
-} as const;
-
-export const TEMPERATURES = [0, 0.5, 1, 1.5, 2] as const;
+import type { Job, JobWithItems, BatchStatus, GeminiBatchState } from '$lib/types';
+import * as cmd from '$lib/utils/commands';
+import { isActiveJob } from '$lib/utils/jobs';
 
 function createJobsStore() {
-	const { subscribe, set, update } = writable<Job[]>([]);
+  const { subscribe, set, update } = writable<Job[]>([]);
+  let pollTimeout: ReturnType<typeof setTimeout> | null = null;
+  let isPolling = false;
 
-	let pollInterval: ReturnType<typeof setInterval> | null = null;
+  async function pollActiveJobs() {
+    let currentJobs: Job[] = [];
+    const unsub = subscribe((j) => (currentJobs = j));
+    unsub();
 
-	async function loadJobs() {
-		try {
-			const jobs = await invoke<Job[]>('get_jobs');
-			set(jobs);
-		} catch (error) {
-			console.error('Failed to load jobs:', error);
-		}
-	}
+    const activeJobs = currentJobs.filter(isActiveJob);
 
-	async function loadActiveJobs() {
-		try {
-			const jobs = await invoke<Job[]>('get_jobs', { status: 'active' });
-			update((current) => {
-				// Merge active jobs with existing
-				const ids = new Set(jobs.map((j) => j.id));
-				const others = current.filter((j) => !ids.has(j.id));
-				return [...jobs, ...others];
-			});
-		} catch (error) {
-			console.error('Failed to load active jobs:', error);
-		}
-	}
+    if (activeJobs.length === 0) {
+      isPolling = false;
+      return;
+    }
 
-	function startPolling() {
-		if (pollInterval) return;
-		pollInterval = setInterval(async () => {
-			const currentJobs = await new Promise<Job[]>((resolve) => {
-				const unsubscribe = subscribe((jobs) => {
-					resolve(jobs);
-					unsubscribe();
-				});
-			});
+    for (const job of activeJobs) {
+      try {
+        if (job.batch_job_name) {
+          const batch: BatchStatus = await cmd.pollBatch(job.batch_job_name);
+          const newStatus = mapBatchState(batch.state);
 
-			const activeJobs = currentJobs.filter(
-				(j) => j.status === 'pending' || j.status === 'processing'
-			);
+          if (newStatus === 'completed' && job.batch_job_name) {
+            try {
+              await cmd.downloadResults(job.batch_job_name, job.id);
+              const updated = await cmd.getJob(job.id);
+              update((jobs) => jobs.map((j) => (j.id === job.id ? updated.job : j)));
+            } catch (err) {
+              console.error(`Failed to download results for ${job.id}:`, err);
+              update((jobs) =>
+                jobs.map((j) =>
+                  j.id === job.id ? { ...j, status: 'failed' as const } : j
+                )
+              );
+            }
+          } else {
+            // For non-completed states, update normally
+            update((jobs) =>
+              jobs.map((j) =>
+                j.id === job.id
+                  ? {
+                      ...j,
+                      status: newStatus,
+                      completed_items: batch.completed_requests,
+                      failed_items: batch.failed_requests,
+                    }
+                  : j
+              )
+            );
+          }
+        } else {
+          const updated: JobWithItems = await cmd.getJob(job.id);
+          update((jobs) => jobs.map((j) => (j.id === job.id ? updated.job : j)));
+        }
+      } catch (err) {
+        console.error(`Failed to poll job ${job.id}:`, err);
+      }
+    }
 
-			if (activeJobs.length === 0) {
-				stopPolling();
-				return;
-			}
+    // Schedule next poll if there are still active jobs
+    let updatedJobs: Job[] = [];
+    const unsub2 = subscribe((j) => (updatedJobs = j));
+    unsub2();
+    const hasActiveJobs = updatedJobs.some(isActiveJob);
 
-			// Update each active job
-			for (const job of activeJobs) {
-				try {
-					const updated = await invoke<JobWithItems>('get_job', { id: job.id });
-					update((jobs) => jobs.map((j) => (j.id === updated.job.id ? updated.job : j)));
-				} catch {
-					// Job may have been deleted
-				}
-			}
-		}, 2000);
-	}
+    if (hasActiveJobs) {
+      pollTimeout = setTimeout(pollActiveJobs, 2000);
+    } else {
+      isPolling = false;
+    }
+  }
 
-	function stopPolling() {
-		if (pollInterval) {
-			clearInterval(pollInterval);
-			pollInterval = null;
-		}
-	}
+  function mapBatchState(state: GeminiBatchState): Job['status'] {
+    switch (state) {
+      case 'JOB_STATE_SUCCEEDED':
+        return 'completed';
+      case 'JOB_STATE_FAILED':
+      case 'JOB_STATE_EXPIRED':
+        return 'failed';
+      case 'JOB_STATE_CANCELLED':
+        return 'cancelled';
+      case 'JOB_STATE_RUNNING':
+        return 'processing';
+      default:
+        return 'pending';
+    }
+  }
 
-	return {
-		subscribe,
-		loadJobs,
-		loadActiveJobs,
-		startPolling,
-		stopPolling,
-		addJob: (job: Job) => {
-			update((jobs) => [job, ...jobs]);
-			startPolling();
-		},
-		updateJob: (updated: Job) => {
-			update((jobs) => jobs.map((j) => (j.id === updated.id ? updated : j)));
-		},
-		removeJob: (id: string) => {
-			update((jobs) => jobs.filter((j) => j.id !== id));
-		}
-	};
+  function startPolling() {
+    if (isPolling) return;
+    isPolling = true;
+    pollTimeout = setTimeout(pollActiveJobs, 2000);
+  }
+
+  function stopPolling() {
+    if (pollTimeout) {
+      clearTimeout(pollTimeout);
+      pollTimeout = null;
+    }
+    isPolling = false;
+  }
+
+  return {
+    subscribe,
+    async loadJobs(status?: 'active' | 'all') {
+      const jobs = await cmd.getJobs(status);
+      set(jobs);
+      const hasActive = jobs.some((j) => j.status === 'pending' || j.status === 'processing');
+      if (hasActive) startPolling();
+    },
+    addJob(job: Job) {
+      update((jobs) => [job, ...jobs]);
+      startPolling();
+    },
+    updateJob(updated: Job) {
+      update((jobs) => jobs.map((j) => (j.id === updated.id ? updated : j)));
+    },
+    removeJob(id: string) {
+      update((jobs) => jobs.filter((j) => j.id !== id));
+    },
+    setJobs(jobList: Job[]) {
+      set(jobList);
+    },
+    startPolling,
+    stopPolling,
+  };
 }
 
 export const jobs = createJobsStore();
 
-// Derived store for active jobs count
 export const activeJobsCount = derived(jobs, ($jobs) =>
-	$jobs.filter((j) => j.status === 'pending' || j.status === 'processing').length
+  $jobs.filter(isActiveJob).length
 );
-
-// Calculate cost for a job
-export function calculateCost(size: keyof typeof OUTPUT_SIZES, count: number): number {
-	return OUTPUT_SIZES[size].price * count;
-}

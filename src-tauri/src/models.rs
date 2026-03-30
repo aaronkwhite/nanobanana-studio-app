@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use rusqlite;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Job {
@@ -16,6 +17,27 @@ pub struct Job {
     pub failed_items: i32,
     pub created_at: String,
     pub updated_at: String,
+}
+
+impl Job {
+    pub fn from_row(row: &rusqlite::Row) -> rusqlite::Result<Job> {
+        Ok(Job {
+            id: row.get(0)?,
+            status: row.get(1)?,
+            mode: row.get(2)?,
+            prompt: row.get(3)?,
+            output_size: row.get(4)?,
+            temperature: row.get(5)?,
+            aspect_ratio: row.get(6)?,
+            batch_job_name: row.get(7)?,
+            batch_temp_file: row.get(8)?,
+            total_items: row.get(9)?,
+            completed_items: row.get(10)?,
+            failed_items: row.get(11)?,
+            created_at: row.get(12)?,
+            updated_at: row.get(13)?,
+        })
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -65,4 +87,12 @@ pub struct UploadedFile {
     pub id: String,
     pub path: String,
     pub name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BatchStatus {
+    pub state: String,
+    pub total_requests: i32,
+    pub completed_requests: i32,
+    pub failed_requests: i32,
 }

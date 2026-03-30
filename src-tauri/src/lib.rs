@@ -1,6 +1,7 @@
 mod commands;
 mod db;
 mod models;
+pub mod paths;
 
 use db::Database;
 use tauri::Manager;
@@ -10,6 +11,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_shell::init())
         .setup(|app| {
             // Initialize logging in debug mode
             if cfg!(debug_assertions) {
@@ -29,8 +31,9 @@ pub fn run() {
             // Create required directories
             let app_data_dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(app_data_dir.join("uploads")).ok();
-            std::fs::create_dir_all(app_data_dir.join("results")).ok();
             std::fs::create_dir_all(app_data_dir.join("temp")).ok();
+            let pictures_dir = app.path().picture_dir()?;
+            std::fs::create_dir_all(pictures_dir.join("Nana Studio")).ok();
 
             Ok(())
         })
@@ -43,9 +46,18 @@ pub fn run() {
             commands::get_config,
             commands::save_config,
             commands::delete_config,
+            commands::get_setting,
+            commands::save_setting,
+            commands::get_all_settings,
+            commands::get_default_results_dir,
             commands::upload_images,
             commands::get_image,
             commands::delete_upload,
+            commands::submit_batch,
+            commands::poll_batch,
+            commands::download_results,
+            commands::cancel_batch,
+            commands::validate_api_key,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

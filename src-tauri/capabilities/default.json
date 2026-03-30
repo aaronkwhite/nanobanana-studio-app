@@ -7,13 +7,16 @@
   ],
   "permissions": [
     "core:default",
+    "core:window:allow-start-dragging",
     "dialog:default",
+    "dialog:allow-open",
     "fs:default",
+    "shell:allow-open",
     {
       "identifier": "fs:scope",
       "allow": [
         "$APPDATA/**",
-        "$TEMP/**"
+        "$HOME/**"
       ]
     }
   ]

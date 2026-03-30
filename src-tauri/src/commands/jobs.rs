@@ -26,24 +26,7 @@ pub fn get_jobs(app: AppHandle, status: Option<String>) -> Result<Vec<Job>, Stri
 
     let mut stmt = conn.prepare(sql).map_err(|e| e.to_string())?;
     let jobs = stmt
-        .query_map([], |row| {
-            Ok(Job {
-                id: row.get(0)?,
-                status: row.get(1)?,
-                mode: row.get(2)?,
-                prompt: row.get(3)?,
-                output_size: row.get(4)?,
-                temperature: row.get(5)?,
-                aspect_ratio: row.get(6)?,
-                batch_job_name: row.get(7)?,
-                batch_temp_file: row.get(8)?,
-                total_items: row.get(9)?,
-                completed_items: row.get(10)?,
-                failed_items: row.get(11)?,
-                created_at: row.get(12)?,
-                updated_at: row.get(13)?,
-            })
-        })
+        .query_map([], Job::from_row)
         .map_err(|e| e.to_string())?
         .collect::<Result<Vec<_>, _>>()
         .map_err(|e| e.to_string())?;
@@ -63,24 +46,7 @@ pub fn get_job(app: AppHandle, id: String) -> Result<JobWithItems, String> {
                     created_at, updated_at
              FROM jobs WHERE id = ?1",
             params![id],
-            |row| {
-                Ok(Job {
-                    id: row.get(0)?,
-                    status: row.get(1)?,
-                    mode: row.get(2)?,
-                    prompt: row.get(3)?,
-                    output_size: row.get(4)?,
-                    temperature: row.get(5)?,
-                    aspect_ratio: row.get(6)?,
-                    batch_job_name: row.get(7)?,
-                    batch_temp_file: row.get(8)?,
-                    total_items: row.get(9)?,
-                    completed_items: row.get(10)?,
-                    failed_items: row.get(11)?,
-                    created_at: row.get(12)?,
-                    updated_at: row.get(13)?,
-                })
-            },
+            Job::from_row,
         )
         .map_err(|e| e.to_string())?;
 
@@ -181,6 +147,17 @@ pub fn create_t2i_job(app: AppHandle, request: CreateT2IJobRequest) -> Result<Jo
 
 #[tauri::command]
 pub fn create_i2i_job(app: AppHandle, request: CreateI2IJobRequest) -> Result<JobWithItems, String> {
+    // Validate image paths are within uploads directory
+    let uploads_dir = crate::paths::get_uploads_dir(&app)?;
+    for image_path in &request.image_paths {
+        let canonical = std::path::Path::new(image_path)
+            .canonicalize()
+            .map_err(|_| format!("Image not found: {}", image_path))?;
+        if !canonical.starts_with(&uploads_dir) {
+            return Err("Image paths must be within the uploads directory".to_string());
+        }
+    }
+
     let db = get_db(&app);
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
 
@@ -245,14 +222,29 @@ pub fn create_i2i_job(app: AppHandle, request: CreateI2IJobRequest) -> Result<Jo
 }
 
 #[tauri::command]
-pub fn delete_job(app: AppHandle, id: String) -> Result<(), String> {
+pub async fn delete_job(app: AppHandle, id: String) -> Result<(), String> {
+    let batch_name: Option<String> = {
+        let db = get_db(&app);
+        let conn = db.conn.lock().map_err(|e| e.to_string())?;
+        conn.query_row(
+            "SELECT batch_job_name FROM jobs WHERE id = ?1 AND status IN ('pending', 'processing')",
+            params![id],
+            |row| row.get(0),
+        )
+        .ok()
+        .flatten()
+    };
+
+    // Cancel batch if active (fire-and-forget)
+    if let Some(ref name) = batch_name {
+        let _ = super::batch::cancel_batch(app.clone(), name.clone()).await;
+    }
+
+    // Delete from DB
     let db = get_db(&app);
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
-
-    // Delete job items first (cascade should handle this, but be explicit)
     conn.execute("DELETE FROM job_items WHERE job_id = ?1", params![id])
         .map_err(|e| e.to_string())?;
-
     conn.execute("DELETE FROM jobs WHERE id = ?1", params![id])
         .map_err(|e| e.to_string())?;
 

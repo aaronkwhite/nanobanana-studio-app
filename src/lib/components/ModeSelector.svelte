@@ -1,40 +1,25 @@
 <script lang="ts">
-	import { browser } from '$app/environment';
+  import { Tabs } from '$lib/components/ui';
+  import { browser } from '$app/environment';
+  import type { JobMode } from '$lib/types';
 
-	type Mode = 'text-to-image' | 'image-to-image';
+  interface Props {
+    mode: JobMode;
+    onchange?: (mode: JobMode) => void;
+  }
 
-	interface Props {
-		mode: Mode;
-		onchange: (mode: Mode) => void;
-	}
+  let { mode = $bindable('text-to-image'), onchange }: Props = $props();
 
-	let { mode, onchange }: Props = $props();
+  const tabs = [
+    { value: 'text-to-image', label: 'Text to Image' },
+    { value: 'image-to-image', label: 'Image to Image' },
+  ];
 
-	// Persist mode to localStorage
-	$effect(() => {
-		if (browser) {
-			localStorage.setItem('nanobanana-mode', mode);
-		}
-	});
+  function handleChange(value: string) {
+    mode = value as JobMode;
+    if (browser) localStorage.setItem('nanobanana-mode', mode);
+    onchange?.(mode);
+  }
 </script>
 
-<div class="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg">
-	<button
-		onclick={() => onchange('text-to-image')}
-		class="flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors {mode ===
-		'text-to-image'
-			? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white'
-			: 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}"
-	>
-		✏️ Text to Image
-	</button>
-	<button
-		onclick={() => onchange('image-to-image')}
-		class="flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors {mode ===
-		'image-to-image'
-			? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white'
-			: 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}"
-	>
-		🖼️ Image to Image
-	</button>
-</div>
+<Tabs {tabs} value={mode} onchange={handleChange} />

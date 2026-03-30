@@ -1,59 +1,67 @@
 <script lang="ts">
-	import { theme, type Theme } from '$lib/stores/theme';
-	import { activeJobsCount } from '$lib/stores/jobs';
-	import { config } from '$lib/stores/config';
+  import { Sun, Moon, Monitor, Settings, AlertTriangle, Key } from 'lucide-svelte';
+  import { Tooltip } from '$lib/components/ui';
+  import { theme } from '$lib/stores/theme';
+  import { config } from '$lib/stores/config';
 
-	let showSettings = false;
-
-	function getThemeIcon(t: Theme): string {
-		switch (t) {
-			case 'light':
-				return '☀️';
-			case 'dark':
-				return '🌙';
-			case 'system':
-				return '💻';
-		}
-	}
-
-	export { showSettings };
+  const themeIcons = { light: Sun, dark: Moon, system: Monitor } as const;
+  const ThemeIcon = $derived(themeIcons[$theme]);
 </script>
 
-<header class="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-	<div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-		<div class="flex items-center gap-3">
-			<span class="text-2xl">🍌</span>
-			<h1 class="text-xl font-bold text-gray-900 dark:text-white">Nanobanana Studio</h1>
-		</div>
+<header
+  data-tauri-drag-region
+  class="sticky top-0 z-50 titlebar titlebar-glass"
+>
+  <!-- Top row: centered title with traffic light space -->
+  <div data-tauri-drag-region class="flex h-12 items-center justify-between px-4">
+    <!-- Left spacer for traffic lights (86px) -->
+    <div class="shrink-0" style="width: var(--traffic-light-offset);"></div>
 
-		<div class="flex items-center gap-4">
-			{#if $activeJobsCount > 0}
-				<span
-					class="px-2 py-1 text-sm bg-banana-100 dark:bg-banana-900 text-banana-800 dark:text-banana-200 rounded-full"
-				>
-					{$activeJobsCount} active
-				</span>
-			{/if}
+    <!-- Center: title -->
+    <div data-tauri-drag-region class="flex items-center gap-2">
+      <span class="text-sm font-semibold text-[var(--text)]">Nana Studio</span>
+    </div>
 
-			{#if !$config.has_key}
-				<span class="text-sm text-amber-600 dark:text-amber-400"> ⚠️ API key required </span>
-			{/if}
+    <!-- Right: actions (no-drag so buttons work) -->
+    <div class="flex items-center gap-1.5 no-drag">
+      <Tooltip text="Toggle theme">
+        <button
+          onclick={() => theme.toggle()}
+          class="flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] text-[var(--muted)] transition-colors hover:text-[var(--text)] hover:bg-[var(--accent-subtle)]"
+          aria-label="Toggle theme"
+        >
+          <ThemeIcon size={16} />
+        </button>
+      </Tooltip>
+      <Tooltip text="Settings">
+        <a
+          href="/settings"
+          class="flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] text-[var(--muted)] transition-colors hover:text-[var(--text)] hover:bg-[var(--accent-subtle)]"
+          aria-label="Settings"
+        >
+          <Settings size={16} />
+        </a>
+      </Tooltip>
+    </div>
+  </div>
 
-			<button
-				onclick={() => theme.toggle()}
-				class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-				title="Toggle theme ({$theme})"
-			>
-				{getThemeIcon($theme)}
-			</button>
-
-			<button
-				onclick={() => (showSettings = true)}
-				class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-				title="Settings"
-			>
-				⚙️
-			</button>
-		</div>
-	</div>
+  <!-- API key warning toast -->
+  {#if !$config.has_key}
+    <div class="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50 no-drag">
+      <div class="flex items-center gap-2 rounded-lg border border-[rgba(128,128,128,0.12)] bg-[var(--surface)] px-3 py-1.5 shadow-md backdrop-blur-sm">
+        <Key size={14} class="text-[var(--accent)]" />
+        <span class="text-xs font-medium text-[var(--muted)] whitespace-nowrap">No API key configured</span>
+        <a href="/settings" class="text-xs font-medium text-[var(--accent)] hover:underline whitespace-nowrap">Add key →</a>
+      </div>
+    </div>
+  {/if}
 </header>
+
+<style>
+  .titlebar {
+    -webkit-app-region: drag;
+  }
+  .no-drag {
+    -webkit-app-region: no-drag;
+  }
+</style>

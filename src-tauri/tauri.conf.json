@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Nanobanana Studio",
-  "version": "0.1.0",
+  "productName": "Nana Studio",
+  "version": "0.4.3",
   "identifier": "com.nanobanana.studio",
   "build": {
     "frontendDist": "../build",
@@ -12,16 +12,22 @@
   "app": {
     "windows": [
       {
-        "title": "Nanobanana Studio",
-        "width": 1200,
-        "height": 800,
+        "title": "Nana Studio",
+        "width": 800,
+        "height": 700,
+        "minWidth": 480,
+        "minHeight": 500,
         "resizable": true,
         "fullscreen": false,
-        "center": true
+        "center": true,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "decorations": true,
+        "trafficLightPosition": { "x": 16, "y": 28 }
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src https://generativelanguage.googleapis.com"
     }
   },
   "bundle": {

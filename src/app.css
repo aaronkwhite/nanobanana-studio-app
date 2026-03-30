@@ -1,110 +1,245 @@
 @import 'tailwindcss';
 
-/* Custom theme for Nanobanana Studio */
-@theme {
-  /* Banana-inspired color palette */
-  --color-banana-50: #fffef5;
-  --color-banana-100: #fffde6;
-  --color-banana-200: #fff9bf;
-  --color-banana-300: #fff599;
-  --color-banana-400: #ffed4d;
-  --color-banana-500: #ffe600;
-  --color-banana-600: #e6cf00;
-  --color-banana-700: #bfac00;
-  --color-banana-800: #998a00;
-  --color-banana-900: #7d7100;
+/* ============================================
+   DESIGN TOKENS — Moonlight Silver + Rose Gold
+   ============================================ */
+
+:root {
+  /* --- Moonlight Silver (neutrals) --- */
+  --silver-50: #F8FAFC;
+  --silver-100: #F1F5F9;
+  --silver-200: #E2E8F0;
+  --silver-300: #CBD5E1;
+  --silver-400: #94A3B8;
+  --silver-500: #64748B;
+  --silver-600: #475569;
+  --silver-700: #334155;
+  --silver-800: #1E293B;
+
+  /* --- Rose Gold (accent) --- */
+  --rose-50: #fdf2f8;
+  --rose-100: #fce7f3;
+  --rose-200: #fbb6ce;
+  --rose-300: #f687b3;
+  --rose-400: #ed64a6;
+  --rose-500: #d53f8c;
+  --rose-600: #b83280;
+  --rose-700: #97266d;
+  --rose-800: #702459;
+
+  /* --- Semantic (base values, overridden per theme) --- */
+
+  /* --- Spacing (4px grid) --- */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+
+  /* --- Border Radius --- */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* --- Shadows --- */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+
+  /* --- Typography --- */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: "SF Mono", SFMono-Regular, ui-monospace, "Cascadia Code", Menlo, Monaco, Consolas, monospace;
+
+  /* --- Transitions --- */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.2s ease;
+  --transition-slow: 0.25s ease;
+
+  /* --- Layout --- */
+  --traffic-light-offset: 86px;
+
+  /* --- Neutral tints --- */
+  --neutral-tint: rgba(128, 128, 128, 0.06);
+  --neutral-tint-strong: rgba(128, 128, 128, 0.08);
+  --neutral-border: rgba(128, 128, 128, 0.12);
+  --neutral-border-hover: rgba(128, 128, 128, 0.2);
 }
 
-/* Dark mode variant */
-@variant dark (&:where(.dark, .dark *));
+/* ============================================
+   LIGHT THEME (default)
+   ============================================ */
 
-/* Base styles */
+:root,
+[data-theme="light"] {
+  --bg: var(--silver-50);
+  --surface: #ffffff;
+  --border: var(--silver-200);
+  --text: var(--silver-800);
+  --muted: var(--silver-500);
+  --accent: var(--rose-500);
+  --accent-hover: var(--rose-600);
+  --accent-active: var(--rose-700);
+  --accent-text: #ffffff;
+  --accent-subtle: var(--rose-50);
+  --accent-glow: rgba(213, 63, 140, 0.25);
+
+  --success: #2D9D78;
+  --success-subtle: rgba(45, 157, 120, 0.08);
+  --success-border: rgba(45, 157, 120, 0.2);
+  --warning: #C08A2E;
+  --warning-subtle: rgba(192, 138, 46, 0.08);
+  --warning-border: rgba(192, 138, 46, 0.2);
+  --error: #C93B3B;
+  --error-subtle: rgba(201, 59, 59, 0.08);
+  --error-border: rgba(201, 59, 59, 0.2);
+
+  --glass-bg: rgba(255, 255, 255, 0.4);
+  --titlebar-bg: rgba(255, 255, 255, 0.3);
+  --glass-border: var(--silver-200);
+  --glass-blur: blur(10px) saturate(150%);
+
+  --overlay-bg: rgba(0, 0, 0, 0.4);
+  --overlay-blur: blur(4px);
+}
+
+/* ============================================
+   DARK THEME
+   ============================================ */
+
+[data-theme="dark"] {
+  --bg: var(--silver-800);
+  --surface: var(--silver-700);
+  --border: var(--silver-700);
+  --text: var(--silver-100);
+  --muted: var(--silver-400);
+  --accent: var(--rose-400);
+  --accent-hover: var(--rose-300);
+  --accent-active: var(--rose-500);
+  --accent-text: var(--rose-800);
+  --accent-subtle: rgba(237, 100, 166, 0.1);
+  --accent-glow: rgba(237, 100, 166, 0.25);
+
+  --success: #5BB89A;
+  --success-subtle: rgba(91, 184, 154, 0.1);
+  --success-border: rgba(91, 184, 154, 0.2);
+  --warning: #D4A54A;
+  --warning-subtle: rgba(212, 165, 74, 0.1);
+  --warning-border: rgba(212, 165, 74, 0.2);
+  --error: #E06060;
+  --error-subtle: rgba(224, 96, 96, 0.1);
+  --error-border: rgba(224, 96, 96, 0.2);
+
+  --glass-bg: rgba(51, 65, 85, 0.4);
+  --titlebar-bg: rgba(30, 41, 59, 0.3);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur: none;
+
+  --overlay-bg: rgba(0, 0, 0, 0.6);
+  --overlay-blur: blur(4px);
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
+html, body {
+  overscroll-behavior: none;
+}
+
 html {
-  @apply antialiased;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  @apply bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100;
-  @apply transition-colors duration-200;
+  background: var(--bg);
+  color: var(--text);
+  transition: background var(--transition-base), color var(--transition-base);
 }
 
-/* Custom scrollbar */
+/* ============================================
+   GLASS UTILITIES
+   ============================================ */
+
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+}
+
+.titlebar-glass {
+  background: var(--titlebar-bg, var(--glass-bg));
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.glass-overlay {
+  background: var(--overlay-bg);
+  backdrop-filter: var(--overlay-blur);
+  -webkit-backdrop-filter: var(--overlay-blur);
+}
+
+/* ============================================
+   NATIVE SELECT STYLING (dark mode)
+   ============================================ */
+
+select option {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ============================================
+   FOCUS STYLES
+   ============================================ */
+
+:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+select:focus-visible,
+[role="listbox"] button:focus,
+[role="listbox"] button:focus-visible {
+  outline: none;
+  box-shadow: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ============================================
+   SCROLLBAR
+   ============================================ */
+
 ::-webkit-scrollbar {
-  @apply w-2 h-2;
+  display: none;
 }
 
-::-webkit-scrollbar-track {
-  @apply bg-gray-100 dark:bg-gray-800;
+* {
+  scrollbar-width: none;
 }
 
-::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-400 dark:bg-gray-500;
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
 }
 
-/* Component utility classes */
-.btn {
-  @apply px-4 py-2 rounded-lg font-medium transition-colors;
-  @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
-.btn-primary {
-  @apply bg-banana-500 text-gray-900 hover:bg-banana-400;
-  @apply focus:ring-banana-500;
-}
-
-.btn-secondary {
-  @apply bg-gray-200 text-gray-900 hover:bg-gray-300;
-  @apply dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600;
-  @apply focus:ring-gray-500;
-}
-
-.btn-danger {
-  @apply bg-red-500 text-white hover:bg-red-600;
-  @apply focus:ring-red-500;
-}
-
-.input {
-  @apply w-full px-3 py-2 rounded-lg border;
-  @apply bg-white dark:bg-gray-800;
-  @apply border-gray-300 dark:border-gray-600;
-  @apply focus:outline-none focus:ring-2 focus:ring-banana-500 focus:border-transparent;
-  @apply placeholder-gray-400 dark:placeholder-gray-500;
-}
-
-.select {
-  @apply w-full px-3 py-2 rounded-lg border;
-  @apply bg-white dark:bg-gray-800;
-  @apply border-gray-300 dark:border-gray-600;
-  @apply focus:outline-none focus:ring-2 focus:ring-banana-500 focus:border-transparent;
-  @apply appearance-none cursor-pointer pr-10;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-  background-position: right 0.5rem center;
-  background-repeat: no-repeat;
-  background-size: 1.5em 1.5em;
-}
-
-.card {
-  @apply bg-white dark:bg-gray-800 rounded-xl shadow-sm;
-  @apply border border-gray-200 dark:border-gray-700;
-}
-
-.shimmer {
-  @apply animate-pulse;
-  background: linear-gradient(90deg, #e5e7eb 25%, #d1d5db 50%, #e5e7eb 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s ease-in-out infinite;
-}
-
-.dark .shimmer {
-  background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
-  background-size: 200% 100%;
-}
-
-@keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+.animate-spin {
+  animation: spin 1s linear infinite;
 }
