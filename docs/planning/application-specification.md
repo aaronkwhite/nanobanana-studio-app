@@ -33,9 +33,9 @@ CREATE TABLE jobs (
 - `status`: One of `'pending' | 'processing' | 'completed' | 'failed' | 'cancelled'`
 - `mode`: Either `'text-to-image'` or `'image-to-image'`
 - `prompt`: Main prompt text (first prompt in queue for T2I, transformation prompt for I2I)
-- `output_size`: One of `'1K' | '2K' | '4K'`
+- `output_size`: One of `'0.5K' | '1K' | '2K' | '4K'`
 - `temperature`: Float 0-2 (0, 0.5, 1, 1.5, 2) - controls creativity
-- `aspect_ratio`: One of `'1:1' | '16:9' | '9:16' | '4:3' | '3:4'`
+- `aspect_ratio`: One of `'1:1' | '16:9' | '9:16' | '4:3' | '3:4' | '3:2' | '2:3' | '4:5' | '5:4' | '21:9'`
 - `batch_job_name`: External Gemini Batch API job identifier
 - `batch_temp_file`: Path to temporary JSONL file used for submission
 - `total_items`: Count of job items in batch
@@ -119,9 +119,9 @@ struct JobWithItems {
 ```rust
 struct CreateT2IJob {
     prompts: Vec<String>,
-    output_size: String,  // "1K" | "2K" | "4K"
+    output_size: String,  // "0.5K" | "1K" | "2K" | "4K"
     temperature: f32,     // 0, 0.5, 1, 1.5, 2
-    aspect_ratio: String, // "1:1" | "16:9" | "9:16" | "4:3" | "3:4"
+    aspect_ratio: String, // "1:1" | "16:9" | "9:16" | "4:3" | "3:4" | "3:2" | "2:3" | "4:5" | "5:4" | "21:9"
 }
 ```
 
@@ -209,7 +209,7 @@ struct ConfigStatus {
 ## 3. Gemini API Integration
 
 ### Model & Configuration
-- **Model:** `gemini-3-pro-image-preview`
+- **Model:** `gemini-3.1-flash-image-preview`
 - **API:** google-generative-ai-rs or reqwest with REST API
 - **Mode:** Batch API (async processing)
 - **Cost Reduction:** 50% savings vs real-time API
@@ -249,11 +249,12 @@ Each batch request is a JSONL file where each line is a separate request:
 ```
 
 ### Image Size Mappings
-| Size | Square | 16:9 | 9:16 | 4:3 | 3:4 |
-|------|--------|------|------|-----|-----|
-| 1K | 1024x1024 | 1024x576 | 576x1024 | 1024x768 | 768x1024 |
-| 2K | 2048x2048 | 2048x1152 | 1152x2048 | 2048x1536 | 1536x2048 |
-| 4K | 4096x4096 | 4096x2304 | 2304x4096 | 4096x3072 | 3072x4096 |
+| Size | Square (1:1) | 16:9 | 9:16 | 4:3 | 3:4 | 3:2 | 2:3 | 4:5 | 5:4 | 21:9 |
+|------|-------------|------|------|-----|-----|-----|-----|-----|-----|------|
+| 0.5K | 512x512 | 512x288 | 288x512 | 512x384 | 384x512 | 512x341 | 341x512 | 512x640 | 640x512 | 512x219 |
+| 1K | 1024x1024 | 1024x576 | 576x1024 | 1024x768 | 768x1024 | 1024x683 | 683x1024 | 1024x1280 | 1280x1024 | 1024x439 |
+| 2K | 2048x2048 | 2048x1152 | 1152x2048 | 2048x1536 | 1536x2048 | 2048x1365 | 1365x2048 | 2048x2560 | 2560x2048 | 2048x878 |
+| 4K | 4096x4096 | 4096x2304 | 2304x4096 | 4096x3072 | 3072x4096 | 4096x2731 | 2731x4096 | 4096x5120 | 5120x4096 | 4096x1756 |
 
 ### Batch Submission Flow
 
@@ -320,12 +321,13 @@ created → pending → processing → completed/failed/cancelled
 - **completed:** Successfully generated, image saved
 - **failed:** Generation failed, error message stored
 
-### Cost Calculation
+### Cost Calculation (NB2 Batch API Pricing)
 ```
 unit_cost = {
-  "1K": $0.02,
-  "2K": $0.07,
-  "4K": $0.12
+  "0.5K": $0.0225,
+  "1K": $0.0335,
+  "2K": $0.0505,
+  "4K": $0.0755
 }
 
 total_cost = unit_cost * total_items
@@ -449,11 +451,12 @@ App
 ### Constants
 
 ```typescript
-// Output sizes with prices
+// Output sizes with prices (NB2 Batch API)
 const OUTPUT_SIZES = {
-  '1K': { label: '1K ($0.02)', price: 0.02 },
-  '2K': { label: '2K ($0.07)', price: 0.07 },
-  '4K': { label: '4K ($0.12)', price: 0.12 },
+  '0.5K': { label: '0.5K ($0.0225)', price: 0.0225 },
+  '1K': { label: '1K ($0.0335)', price: 0.0335 },
+  '2K': { label: '2K ($0.0505)', price: 0.0505 },
+  '4K': { label: '4K ($0.0755)', price: 0.0755 },
 };
 
 // Aspect ratios
@@ -463,6 +466,11 @@ const ASPECT_RATIOS = {
   '9:16': 'Portrait',
   '4:3': 'Landscape',
   '3:4': 'Tall',
+  '3:2': 'Photo',
+  '2:3': 'Photo Portrait',
+  '4:5': 'Social',
+  '5:4': 'Social Wide',
+  '21:9': 'Ultrawide',
 };
 
 // Temperature values
