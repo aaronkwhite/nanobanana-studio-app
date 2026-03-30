@@ -19,7 +19,7 @@
   let { job }: Props = $props();
   let expanded: boolean = $state(false);
   let items: JobItem[] = $state([]);
-  let prevStatus: string = $state(job.status);
+  let prevStatus: string | undefined = $state(undefined);
 
   const isActive = $derived(isActiveJob(job));
   const isCompleted = $derived(job.status === 'completed');
@@ -29,7 +29,7 @@
   const cost = $derived(calculateCost(job.output_size, job.total_items));
 
   $effect(() => {
-    if (prevStatus !== 'completed' && job.status === 'completed') {
+    if (prevStatus !== undefined && prevStatus !== 'completed' && job.status === 'completed') {
       celebrateBatchComplete();
     }
     prevStatus = job.status;

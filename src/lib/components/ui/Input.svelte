@@ -7,7 +7,8 @@
   }
 
   let { label, error, class: className = '', value = $bindable(''), id, ...rest }: Props = $props();
-  const inputId = id ?? `input-${Math.random().toString(36).slice(2, 9)}`;
+  const fallbackId = `input-${Math.random().toString(36).slice(2, 9)}`;
+  const inputId = $derived(id ?? fallbackId);
 </script>
 
 <div class="flex flex-col gap-1.5">

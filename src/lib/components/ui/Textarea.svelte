@@ -10,7 +10,8 @@
 
   let { label, error, autoResize = false, maxLength, class: className = '', value = $bindable(''), id, ...rest }: Props = $props();
 
-  const textareaId = id ?? `textarea-${Math.random().toString(36).slice(2, 9)}`;
+  const fallbackId = `textarea-${Math.random().toString(36).slice(2, 9)}`;
+  const textareaId = $derived(id ?? fallbackId);
   let textareaEl: HTMLTextAreaElement | undefined = $state();
 
   function handleInput() {
