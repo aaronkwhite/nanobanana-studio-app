@@ -6,10 +6,11 @@
 </script>
 
 <div class="model-picker">
-  <label>Model</label>
+  <span class="group-label">Model</span>
   <div class="options">
     {#each Object.entries(KIE_MODELS) as [id, info]}
       <button
+        type="button"
         class="option"
         class:selected={value === id}
         onclick={() => value = id as KieModel}
@@ -23,7 +24,7 @@
 
 <style>
   .model-picker { display: flex; flex-direction: column; gap: 0.5rem; }
-  label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .group-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
   .options { display: flex; flex-direction: column; gap: 0.25rem; }
   .option {
     display: flex;

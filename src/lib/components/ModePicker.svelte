@@ -5,12 +5,12 @@
 </script>
 
 <div class="mode-picker">
-  <label>Processing Mode</label>
+  <span class="group-label">Processing Mode</span>
   <div class="toggle">
-    <button class:active={value === 'realtime'} onclick={() => value = 'realtime'}>
+    <button type="button" class:active={value === 'realtime'} onclick={() => value = 'realtime'}>
       Real-time
     </button>
-    <button class:active={value === 'batch'} onclick={() => value = 'batch'}>
+    <button type="button" class:active={value === 'batch'} onclick={() => value = 'batch'}>
       Batch <span class="badge">20% off</span>
     </button>
   </div>
@@ -21,7 +21,7 @@
 
 <style>
   .mode-picker { display: flex; flex-direction: column; gap: 0.5rem; }
-  label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .group-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
   .toggle { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
   .toggle button {
     flex: 1;
