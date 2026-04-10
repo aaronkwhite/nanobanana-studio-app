@@ -62,4 +62,22 @@ describe('GET /api/jobs/:id', () => {
     const res = await app.request('/job-xyz');
     expect(res.status).toBe(404);
   });
+
+  it('propagates non-404 PocketBase errors as 500', async () => {
+    const { getPocketBase } = await import('../src/services/pocketbase.ts');
+    vi.mocked(getPocketBase).mockResolvedValueOnce({
+      collection: (_name: string) => ({
+        getOne: vi.fn().mockRejectedValue(
+          new ClientResponseError({ status: 500, response: { message: 'Server error' } })
+        ),
+        getFullList: vi.fn().mockResolvedValue([]),
+      }),
+    } as any);
+
+    const app = new Hono();
+    app.route('/', jobRoutes);
+    const res = await app.request('/job-abc');
+    expect(res.status).toBe(500);
+    expect(res.status).not.toBe(404);
+  });
 });
