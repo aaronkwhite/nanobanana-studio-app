@@ -65,6 +65,11 @@ pub fn run() {
             commands::login,
             commands::logout,
             commands::get_auth_state,
+            commands::api_generate,
+            commands::api_generate_batch,
+            commands::api_get_job,
+            commands::api_get_balance,
+            commands::api_purchase_credits,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
