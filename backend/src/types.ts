@@ -73,6 +73,11 @@ export const CREDIT_COSTS: Record<
 
 export const BATCH_DISCOUNT = 0.8; // 20% off for batch mode
 
+// Note: batch discount (20% off) is applied to the total then ceiling'd.
+// For 1K images (unit cost = 1), the discount first shows at 5+ items:
+//   ceil(1 * 0.8 * 5) = 4 vs realtime 5. For smaller counts the discount
+//   is absorbed by the ceiling — this is intentional and should be communicated
+//   in the UI ("save on large batches").
 export function calculateCreditCost(
   model: JobRecord['model'],
   resolution: JobItemRecord['resolution'],
