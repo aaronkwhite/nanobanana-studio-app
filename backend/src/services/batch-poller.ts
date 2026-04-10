@@ -36,6 +36,9 @@ async function pollBatchJobs(): Promise<void> {
           filter: `job_id = "${job.id}"`,
         });
 
+        // Assumes KIE returns at most one result per unique prompt string.
+        // If a batch contains duplicate prompts, Map construction will keep only the last entry.
+        // TODO: replace with position-based matching if KIE API adds a stable item index field.
         const resultByPrompt = new Map(kieStatus.results.map(r => [r.prompt, r]));
         for (const item of items) {
           const result = resultByPrompt.get(item.prompt);
