@@ -1,6 +1,6 @@
 // src-tauri/src/commands/auth.rs
 use serde_json::Value;
-use tauri::AppHandle;
+use tauri::{AppHandle, State};
 use tauri_plugin_store::StoreExt;
 use crate::models::{AuthState, LoginRequest};
 
@@ -13,13 +13,12 @@ fn get_pocketbase_url() -> String {
 }
 
 #[tauri::command]
-pub async fn login(app: AppHandle, request: LoginRequest) -> Result<AuthState, String> {
+pub async fn login(app: AppHandle, client: State<'_, reqwest::Client>, request: LoginRequest) -> Result<AuthState, String> {
     let url = format!(
         "{}/api/collections/users/auth-with-password",
         get_pocketbase_url()
     );
 
-    let client = reqwest::Client::new();
     let res = client
         .post(&url)
         .json(&serde_json::json!({
@@ -31,8 +30,9 @@ pub async fn login(app: AppHandle, request: LoginRequest) -> Result<AuthState, S
         .map_err(|e| e.to_string())?;
 
     if !res.status().is_success() {
-        let body = res.text().await.unwrap_or_default();
-        return Err(format!("Login failed: {}", body));
+        let body: serde_json::Value = res.json().await.unwrap_or_default();
+        let msg = body["message"].as_str().unwrap_or("Login failed");
+        return Err(msg.to_string());
     }
 
     let body: Value = res.json().await.map_err(|e| e.to_string())?;
@@ -50,9 +50,11 @@ pub async fn login(app: AppHandle, request: LoginRequest) -> Result<AuthState, S
 #[tauri::command]
 pub async fn logout(app: AppHandle) -> Result<(), String> {
     let store = app.store(STORE_PATH).map_err(|e| e.to_string())?;
-    store.delete(TOKEN_KEY);
-    store.delete(USER_ID_KEY);
-    store.save().map_err(|e| e.to_string())?;
+    let had_token = store.delete(TOKEN_KEY);
+    let had_user = store.delete(USER_ID_KEY);
+    if had_token || had_user {
+        store.save().map_err(|e| e.to_string())?;
+    }
     Ok(())
 }
 

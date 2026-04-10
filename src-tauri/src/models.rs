@@ -98,7 +98,7 @@ pub struct BatchStatus {
 }
 
 // Auth
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct LoginRequest {
     pub email: String,
     pub password: String,

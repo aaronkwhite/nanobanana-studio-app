@@ -23,6 +23,9 @@ pub fn run() {
                 )?;
             }
 
+            // Register shared HTTP client
+            app.manage(reqwest::Client::new());
+
             // Initialize database
             let app_data_dir = app.path().app_data_dir()?;
             let db = Database::new(app_data_dir)
