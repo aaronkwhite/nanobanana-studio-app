@@ -28,6 +28,7 @@ vi.mock('../src/middleware/auth.ts', () => ({
 import generateRoutes from '../src/routes/generate.ts';
 import { deductCredits, creditAccount } from '../src/services/credits.ts';
 import { submitRealtime, submitBatch } from '../src/services/kie.ts';
+import { getPocketBase } from '../src/services/pocketbase.ts';
 
 beforeEach(() => {
   vi.mocked(deductCredits).mockReset();
@@ -37,6 +38,12 @@ beforeEach(() => {
   vi.mocked(submitRealtime).mockResolvedValue('kie-job-123');
   vi.mocked(submitBatch).mockReset();
   vi.mocked(submitBatch).mockResolvedValue('kie-batch-456');
+  vi.mocked(getPocketBase).mockReset();
+  vi.mocked(getPocketBase).mockResolvedValue({
+    collection: vi.fn().mockReturnValue({
+      create: vi.fn().mockResolvedValue({ id: 'job-abc' }),
+    }),
+  } as any);
 });
 
 describe('POST / (realtime generate)', () => {
@@ -104,7 +111,6 @@ describe('POST / (realtime generate)', () => {
   });
 
   it('refunds credits when PocketBase job creation fails', async () => {
-    const { getPocketBase } = await import('../src/services/pocketbase.ts');
     vi.mocked(getPocketBase).mockResolvedValueOnce({
       collection: vi.fn().mockReturnValue({
         create: vi.fn().mockRejectedValue(new Error('PocketBase connection refused')),
@@ -141,6 +147,24 @@ describe('POST /batch (batch generate)', () => {
 
   it('refunds credits and rethrows when batch KIE fails', async () => {
     vi.mocked(submitBatch).mockRejectedValue(new Error('KIE API error 500: batch failed'));
+    const app = new Hono();
+    app.route('/', generateRoutes);
+    const res = await app.request('/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'nano-banana-pro', resolution: '1K', prompts: ['a cat'] }),
+    });
+    expect(res.status).toBe(500);
+    expect(creditAccount).toHaveBeenCalledWith(expect.objectContaining({ userId: 'user-123', type: 'refund' }));
+  });
+
+  it('refunds credits when PocketBase job creation fails for batch', async () => {
+    vi.mocked(getPocketBase).mockResolvedValueOnce({
+      collection: vi.fn().mockReturnValue({
+        create: vi.fn().mockRejectedValue(new Error('PocketBase connection refused')),
+      }),
+    } as any);
+
     const app = new Hono();
     app.route('/', generateRoutes);
     const res = await app.request('/batch', {
