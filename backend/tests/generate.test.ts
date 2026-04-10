@@ -102,6 +102,25 @@ describe('POST / (realtime generate)', () => {
     expect(res.status).toBe(500);
     expect(creditAccount).toHaveBeenCalledWith(expect.objectContaining({ userId: 'user-123', type: 'refund' }));
   });
+
+  it('refunds credits when PocketBase job creation fails', async () => {
+    const { getPocketBase } = await import('../src/services/pocketbase.ts');
+    vi.mocked(getPocketBase).mockResolvedValueOnce({
+      collection: vi.fn().mockReturnValue({
+        create: vi.fn().mockRejectedValue(new Error('PocketBase connection refused')),
+      }),
+    } as any);
+
+    const app = new Hono();
+    app.route('/', generateRoutes);
+    const res = await app.request('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'nano-banana-pro', resolution: '1K', prompts: ['a cat'] }),
+    });
+    expect(res.status).toBe(500);
+    expect(creditAccount).toHaveBeenCalledWith(expect.objectContaining({ userId: 'user-123', type: 'refund' }));
+  });
 });
 
 describe('POST /batch (batch generate)', () => {

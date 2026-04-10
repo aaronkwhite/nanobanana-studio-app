@@ -17,7 +17,7 @@ async function createJob(params: {
   creditsCost: number;
   kieJobId: string;
   prompts: string[];
-  resolution: string;
+  resolution: '1K' | '2K' | '4K';
 }): Promise<string> {
   const pb = await getPocketBase();
   const job = await pb.collection('jobs').create({
@@ -83,15 +83,21 @@ generate.post('/', async (c) => {
     throw err;
   }
 
-  const storedJobId = await createJob({
-    userId,
-    mode: 'realtime',
-    model: body.model,
-    creditsCost,
-    kieJobId,
-    prompts: body.prompts,
-    resolution: body.resolution,
-  });
+  let storedJobId: string;
+  try {
+    storedJobId = await createJob({
+      userId,
+      mode: 'realtime',
+      model: body.model,
+      creditsCost,
+      kieJobId,
+      prompts: body.prompts,
+      resolution: body.resolution,
+    });
+  } catch (err) {
+    await creditAccount({ userId, amount: creditsCost, type: 'refund', referenceId: jobId });
+    throw err;
+  }
 
   return c.json({ job_id: storedJobId });
 });
@@ -136,15 +142,21 @@ generate.post('/batch', async (c) => {
     throw err;
   }
 
-  const storedJobId = await createJob({
-    userId,
-    mode: 'batch',
-    model: body.model,
-    creditsCost,
-    kieJobId,
-    prompts: body.prompts,
-    resolution: body.resolution,
-  });
+  let storedJobId: string;
+  try {
+    storedJobId = await createJob({
+      userId,
+      mode: 'batch',
+      model: body.model,
+      creditsCost,
+      kieJobId,
+      prompts: body.prompts,
+      resolution: body.resolution,
+    });
+  } catch (err) {
+    await creditAccount({ userId, amount: creditsCost, type: 'refund', referenceId: jobId });
+    throw err;
+  }
 
   return c.json({ job_id: storedJobId });
 });
