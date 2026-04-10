@@ -2,6 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { Hono } from 'hono';
 import { createMiddleware } from 'hono/factory';
+import { ClientResponseError } from 'pocketbase';
 
 vi.mock('../src/middleware/auth.ts', () => ({
   authMiddleware: createMiddleware<{ Variables: { userId: string } }>(async (c, next) => {
@@ -17,7 +18,7 @@ vi.mock('../src/services/pocketbase.ts', () => ({
         if (name === 'jobs' && id === 'job-abc') {
           return Promise.resolve({ id: 'job-abc', user_id: 'user-123', status: 'complete' });
         }
-        throw new Error('Not found');
+        throw new ClientResponseError({ status: 404, response: { message: 'Not found' } });
       }),
       getFullList: vi.fn().mockResolvedValue([
         { id: 'item-1', job_id: 'job-abc', status: 'complete', output_url: 'https://example.com/img.png' },

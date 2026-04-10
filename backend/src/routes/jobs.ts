@@ -1,5 +1,6 @@
 // backend/src/routes/jobs.ts
 import { Hono } from 'hono';
+import { ClientResponseError } from 'pocketbase';
 import { authMiddleware } from '../middleware/auth.ts';
 import { getPocketBase } from '../services/pocketbase.ts';
 
@@ -20,8 +21,11 @@ jobs.get('/:id', async (c) => {
     });
 
     return c.json({ job, items });
-  } catch {
-    return c.json({ error: 'Not found' }, 404);
+  } catch (err) {
+    if (err instanceof ClientResponseError && err.status === 404) {
+      return c.json({ error: 'Not found' }, 404);
+    }
+    throw err;
   }
 });
 
