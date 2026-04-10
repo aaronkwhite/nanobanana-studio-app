@@ -105,3 +105,90 @@ export const TEMPERATURES = [0, 0.5, 1, 1.5, 2];
 export function calculateCost(size: OutputSize, count: number): number {
   return OUTPUT_SIZES[size].price * count;
 }
+
+// Auth
+export interface AuthState {
+  token: string;
+  user_id: string;
+}
+
+// API types (from Hono backend)
+export type ApiJobStatus = 'pending' | 'processing' | 'complete' | 'failed';
+export type ProcessingMode = 'realtime' | 'batch';
+export type KieModel = 'nano-banana-pro' | '4o-image' | 'flux-kontext';
+
+export interface ApiJob {
+  id: string;
+  status: ApiJobStatus;
+  mode: ProcessingMode;
+  model: KieModel;
+  credits_cost: number;
+  created: string;
+  updated: string;
+}
+
+export interface ApiJobItem {
+  id: string;
+  job_id: string;
+  status: ApiJobStatus;
+  prompt: string;
+  resolution: OutputSize;
+  output_url: string | null;
+  error: string | null;
+}
+
+export interface ApiJobWithItems {
+  job: ApiJob;
+  items: ApiJobItem[];
+}
+
+export interface ApiGenerateRequest {
+  model: KieModel;
+  resolution: OutputSize;
+  prompts: string[];
+  aspect_ratio?: AspectRatio;
+  mode: ProcessingMode;
+}
+
+export interface CreditBalance {
+  balance: number;
+}
+
+export interface CheckoutSession {
+  url: string;
+}
+
+// Model display info
+export const KIE_MODELS: Record<KieModel, { label: string; description: string }> = {
+  'nano-banana-pro': { label: 'Nano Banana Pro', description: 'Gemini 3.0 Pro — default' },
+  '4o-image':        { label: '4o Image', description: 'GPT-4o image generation' },
+  'flux-kontext':    { label: 'Flux.1 Kontext', description: 'Flux image generation' },
+};
+
+// Credit costs per model per resolution (for UI estimate only — backend is authoritative)
+export const CREDIT_COSTS_UI: Record<KieModel, Record<OutputSize, number>> = {
+  'nano-banana-pro': { '1K': 1, '2K': 2, '4K': 3 },
+  '4o-image':        { '1K': 2, '2K': 3, '4K': 4 },
+  'flux-kontext':    { '1K': 2, '2K': 3, '4K': 4 },
+};
+
+export const BATCH_DISCOUNT_UI = 0.8;
+
+export function estimateCreditCost(
+  model: KieModel,
+  resolution: OutputSize,
+  mode: ProcessingMode,
+  count: number
+): number {
+  const unit = CREDIT_COSTS_UI[model][resolution];
+  const discount = mode === 'batch' ? BATCH_DISCOUNT_UI : 1;
+  return Math.ceil(unit * discount * count);
+}
+
+export const CREDIT_PACKS_UI = {
+  starter:  { credits: 100,  price: '$4.99',  label: 'Starter' },
+  standard: { credits: 500,  price: '$19.99', label: 'Standard' },
+  pro:      { credits: 1200, price: '$39.99', label: 'Pro' },
+} as const;
+
+export type CreditPackId = keyof typeof CREDIT_PACKS_UI;

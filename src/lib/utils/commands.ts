@@ -8,6 +8,11 @@ import type {
   CreateI2IJobRequest,
   UploadedFile,
   BatchStatus,
+  AuthState,
+  ApiGenerateRequest,
+  ApiJobWithItems,
+  CreditBalance,
+  CheckoutSession,
 } from '$lib/types';
 
 // --- Jobs ---
@@ -94,4 +99,39 @@ export async function getAllSettings(): Promise<Record<string, string>> {
 
 export async function getDefaultResultsDir(): Promise<string> {
   return invoke<string>('get_default_results_dir');
+}
+
+// --- Auth ---
+
+export async function login(email: string, password: string): Promise<AuthState> {
+  return invoke<AuthState>('login', { request: { email, password } });
+}
+
+export async function logout(): Promise<void> {
+  return invoke<void>('logout');
+}
+
+export async function getAuthState(): Promise<AuthState | null> {
+  return invoke<AuthState | null>('get_auth_state');
+}
+
+// --- API (Hono backend) ---
+
+export async function apiGenerate(request: ApiGenerateRequest): Promise<ApiJobWithItems> {
+  if (request.mode === 'batch') {
+    return invoke<ApiJobWithItems>('api_generate_batch', { request });
+  }
+  return invoke<ApiJobWithItems>('api_generate', { request });
+}
+
+export async function apiGetJob(id: string): Promise<ApiJobWithItems> {
+  return invoke<ApiJobWithItems>('api_get_job', { id });
+}
+
+export async function apiGetBalance(): Promise<CreditBalance> {
+  return invoke<CreditBalance>('api_get_balance');
+}
+
+export async function apiPurchaseCredits(pack: string): Promise<CheckoutSession> {
+  return invoke<CheckoutSession>('api_purchase_credits', { request: { pack } });
 }
