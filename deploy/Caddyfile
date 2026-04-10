@@ -1,0 +1,18 @@
+# deploy/Caddyfile
+# Replace yourdomain.com with your actual domain before deploying
+
+api.yourdomain.com {
+    reverse_proxy localhost:3000
+}
+
+pb.yourdomain.com {
+    # Restrict admin access by IP — uncomment and replace with your IP
+    # @admin path /_/*
+    # handle @admin {
+    #   basicauth admin {
+    #     admin JDJhJDE0J...  # bcrypt hash of your password
+    #   }
+    #   reverse_proxy localhost:8090
+    # }
+    reverse_proxy localhost:8090
+}
