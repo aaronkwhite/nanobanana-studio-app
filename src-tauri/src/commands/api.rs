@@ -88,7 +88,9 @@ pub async fn api_get_job(
         .map_err(|e| e.to_string())?;
 
     if !res.status().is_success() {
-        return Err(format!("Job not found: {}", id));
+        let body: serde_json::Value = res.json().await.unwrap_or_default();
+        let msg = body["error"].as_str().unwrap_or("Job fetch failed");
+        return Err(msg.to_string());
     }
 
     res.json::<ApiJobWithItems>().await.map_err(|e| e.to_string())
