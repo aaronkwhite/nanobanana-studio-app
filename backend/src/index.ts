@@ -3,10 +3,12 @@ import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { env } from './env.ts';
 import creditRoutes from './routes/credits.ts';
+import generateRoutes from './routes/generate.ts';
 
 const app = new Hono();
 
 app.route('/api/credits', creditRoutes);
+app.route('/api/generate', generateRoutes);
 app.get('/health', (c) => c.json({ ok: true }));
 
 serve({ fetch: app.fetch, port: env.port }, (info) => {
