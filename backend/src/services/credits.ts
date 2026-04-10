@@ -75,17 +75,24 @@ export async function creditAccount(params: {
   type: 'purchase' | 'refund';
   referenceId: string;
 }): Promise<number> {
-  const pb = await getPocketBase();
-  const currentBalance = await getBalance(params.userId);
-  const newBalance = currentBalance + params.amount;
+  const mutex = getUserMutex(params.userId);
+  const release = await mutex.acquire();
 
-  await pb.collection('credit_ledger').create<CreditLedgerRecord>({
-    user_id: params.userId,
-    amount: params.amount,
-    balance_after: newBalance,
-    type: params.type,
-    reference_id: params.referenceId,
-  });
+  try {
+    const pb = await getPocketBase();
+    const currentBalance = await getBalance(params.userId);
+    const newBalance = currentBalance + params.amount;
 
-  return newBalance;
+    await pb.collection('credit_ledger').create<CreditLedgerRecord>({
+      user_id: params.userId,
+      amount: params.amount,
+      balance_after: newBalance,
+      type: params.type,
+      reference_id: params.referenceId,
+    });
+
+    return newBalance;
+  } finally {
+    release();
+  }
 }
