@@ -102,6 +102,50 @@ describe('POST /purchase', () => {
     });
     expect(res.status).toBe(400);
   });
+
+  it('returns 500 when Stripe throws', async () => {
+    vi.mocked(getStripe).mockReturnValueOnce({
+      checkout: {
+        sessions: {
+          create: vi.fn().mockRejectedValue(new Error('Stripe network error')),
+        },
+      },
+    } as any);
+
+    const app = new Hono();
+    app.route('/', creditRoutes);
+
+    const res = await app.request('/purchase', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pack: 'starter' }),
+    });
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body.error).toBe('Failed to create checkout session');
+  });
+
+  it('returns 500 when Stripe returns a null URL', async () => {
+    vi.mocked(getStripe).mockReturnValueOnce({
+      checkout: {
+        sessions: {
+          create: vi.fn().mockResolvedValue({ url: null }),
+        },
+      },
+    } as any);
+
+    const app = new Hono();
+    app.route('/', creditRoutes);
+
+    const res = await app.request('/purchase', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pack: 'starter' }),
+    });
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body.error).toBe('No checkout URL returned');
+  });
 });
 
 describe('auth rejection', () => {
