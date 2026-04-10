@@ -30,6 +30,22 @@ vi.mock('../src/services/pocketbase.ts', () => ({
   verifyUserToken: vi.fn(),
 }));
 
+// Helper to create a mock PocketBase instance with filter method
+function createMockPocketBase(getFirstListItemFn: any) {
+  return {
+    filter: vi.fn((template: string, params: Record<string, any>) => {
+      // Simulate PocketBase filter substitution: replace {:paramName} with the actual value
+      return template.replace(/{:(\w+)}/g, (_, key) => {
+        const value = params[key];
+        return typeof value === 'string' ? `'${value}'` : String(value);
+      });
+    }),
+    collection: () => ({
+      getFirstListItem: getFirstListItemFn,
+    }),
+  } as any;
+}
+
 import { getBalance, deductCredits, creditAccount } from '../src/services/credits.ts';
 import { getPocketBase } from '../src/services/pocketbase.ts';
 
@@ -39,22 +55,18 @@ describe('getBalance', () => {
   });
 
   it('returns balance_after from most recent ledger record', async () => {
-    vi.mocked(getPocketBase).mockResolvedValue({
-      collection: () => ({
-        getFirstListItem: vi.fn().mockResolvedValue({ balance_after: 42 }),
-      }),
-    } as any);
+    vi.mocked(getPocketBase).mockResolvedValue(
+      createMockPocketBase(vi.fn().mockResolvedValue({ balance_after: 42 }))
+    );
 
     const balance = await getBalance('user-123');
     expect(balance).toBe(42);
   });
 
   it('returns 0 when no ledger records exist', async () => {
-    vi.mocked(getPocketBase).mockResolvedValue({
-      collection: () => ({
-        getFirstListItem: vi.fn().mockRejectedValue(new Error('Not found')),
-      }),
-    } as any);
+    vi.mocked(getPocketBase).mockResolvedValue(
+      createMockPocketBase(vi.fn().mockRejectedValue(new Error('Not found')))
+    );
 
     const balance = await getBalance('user-123');
     expect(balance).toBe(0);
@@ -67,12 +79,9 @@ describe('deductCredits', () => {
   });
 
   it('throws on insufficient credits', async () => {
-    vi.mocked(getPocketBase).mockResolvedValue({
-      collection: () => ({
-        getFirstListItem: vi.fn().mockResolvedValue({ balance_after: 2 }),
-        create: vi.fn(),
-      }),
-    } as any);
+    vi.mocked(getPocketBase).mockResolvedValue(
+      createMockPocketBase(vi.fn().mockResolvedValue({ balance_after: 2 }))
+    );
 
     await expect(
       deductCredits({ userId: 'user-123', model: 'nano-banana-pro', resolution: '4K', mode: 'realtime', count: 1, referenceId: 'job-1' })
@@ -81,12 +90,10 @@ describe('deductCredits', () => {
 
   it('writes debit entry and returns cost when balance is sufficient', async () => {
     const mockCreate = vi.fn().mockResolvedValue({});
-    vi.mocked(getPocketBase).mockResolvedValue({
-      collection: () => ({
-        getFirstListItem: vi.fn().mockResolvedValue({ balance_after: 10 }),
-        create: mockCreate,
-      }),
-    } as any);
+    const mockGetFirstListItem = vi.fn().mockResolvedValue({ balance_after: 10 });
+    const pb = createMockPocketBase(mockGetFirstListItem);
+    Object.assign(pb, { collection: () => ({ getFirstListItem: mockGetFirstListItem, create: mockCreate }) });
+    vi.mocked(getPocketBase).mockResolvedValue(pb);
 
     const cost = await deductCredits({
       userId: 'user-123',
@@ -109,12 +116,10 @@ describe('deductCredits', () => {
 
   it('succeeds when balance exactly equals cost', async () => {
     const mockCreate = vi.fn().mockResolvedValue({});
-    vi.mocked(getPocketBase).mockResolvedValue({
-      collection: () => ({
-        getFirstListItem: vi.fn().mockResolvedValue({ balance_after: 3 }),
-        create: mockCreate,
-      }),
-    } as any);
+    const mockGetFirstListItem = vi.fn().mockResolvedValue({ balance_after: 3 });
+    const pb = createMockPocketBase(mockGetFirstListItem);
+    Object.assign(pb, { collection: () => ({ getFirstListItem: mockGetFirstListItem, create: mockCreate }) });
+    vi.mocked(getPocketBase).mockResolvedValue(pb);
 
     // nano-banana-pro 4K realtime = 3 credits, balance = 3 → exact match
     const cost = await deductCredits({
@@ -141,12 +146,10 @@ describe('creditAccount', () => {
 
   it('writes credit entry and returns new balance', async () => {
     const mockCreate = vi.fn().mockResolvedValue({});
-    vi.mocked(getPocketBase).mockResolvedValue({
-      collection: () => ({
-        getFirstListItem: vi.fn().mockResolvedValue({ balance_after: 5 }),
-        create: mockCreate,
-      }),
-    } as any);
+    const mockGetFirstListItem = vi.fn().mockResolvedValue({ balance_after: 5 });
+    const pb = createMockPocketBase(mockGetFirstListItem);
+    Object.assign(pb, { collection: () => ({ getFirstListItem: mockGetFirstListItem, create: mockCreate }) });
+    vi.mocked(getPocketBase).mockResolvedValue(pb);
 
     const newBalance = await creditAccount({
       userId: 'user-123',
@@ -167,12 +170,10 @@ describe('creditAccount', () => {
 
   it('credits correctly when starting balance is zero (first purchase)', async () => {
     const mockCreate = vi.fn().mockResolvedValue({});
-    vi.mocked(getPocketBase).mockResolvedValue({
-      collection: () => ({
-        getFirstListItem: vi.fn().mockRejectedValue(new Error('Not found')),
-        create: mockCreate,
-      }),
-    } as any);
+    const mockGetFirstListItem = vi.fn().mockRejectedValue(new Error('Not found'));
+    const pb = createMockPocketBase(mockGetFirstListItem);
+    Object.assign(pb, { collection: () => ({ getFirstListItem: mockGetFirstListItem, create: mockCreate }) });
+    vi.mocked(getPocketBase).mockResolvedValue(pb);
 
     const newBalance = await creditAccount({
       userId: 'user-123',
@@ -190,12 +191,10 @@ describe('creditAccount', () => {
 
   it('writes refund type to ledger correctly', async () => {
     const mockCreate = vi.fn().mockResolvedValue({});
-    vi.mocked(getPocketBase).mockResolvedValue({
-      collection: () => ({
-        getFirstListItem: vi.fn().mockResolvedValue({ balance_after: 0 }),
-        create: mockCreate,
-      }),
-    } as any);
+    const mockGetFirstListItem = vi.fn().mockResolvedValue({ balance_after: 0 });
+    const pb = createMockPocketBase(mockGetFirstListItem);
+    Object.assign(pb, { collection: () => ({ getFirstListItem: mockGetFirstListItem, create: mockCreate }) });
+    vi.mocked(getPocketBase).mockResolvedValue(pb);
 
     await creditAccount({
       userId: 'user-123',

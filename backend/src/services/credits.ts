@@ -20,8 +20,8 @@ export async function getBalance(userId: string): Promise<number> {
   const pb = await getPocketBase();
   try {
     const record = await pb.collection('credit_ledger').getFirstListItem<CreditLedgerRecord>(
-      'user_id = {:userId}',
-      { sort: '-created', fields: 'balance_after', userId }
+      pb.filter('user_id = {:userId}', { userId }),
+      { sort: '-created', fields: 'balance_after' }
     );
     return record.balance_after;
   } catch {

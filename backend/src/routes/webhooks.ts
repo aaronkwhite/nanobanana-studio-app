@@ -32,8 +32,7 @@ webhooks.post('/stripe', async (c) => {
     // Deduplication: skip if this session was already processed
     try {
       await pb.collection('payments').getFirstListItem(
-        'stripe_session_id = {:sessionId}',
-        { sessionId: session.id }
+        pb.filter('stripe_session_id = {:sessionId}', { sessionId: session.id })
       );
       // Already processed — acknowledge without re-crediting
       return c.json({ received: true });

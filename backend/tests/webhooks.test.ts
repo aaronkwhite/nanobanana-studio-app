@@ -11,13 +11,27 @@ vi.mock('../src/services/credits.ts', () => ({
   deductCredits: vi.fn(),
   getBalance: vi.fn(),
 }));
-vi.mock('../src/services/pocketbase.ts', () => ({
-  getPocketBase: vi.fn().mockResolvedValue({
+// Helper to create a mock PocketBase instance with filter method
+function createMockPocketBase(getFirstListItemFn: any) {
+  return {
+    filter: vi.fn((template: string, params: Record<string, any>) => {
+      // Simulate PocketBase filter substitution: replace {:paramName} with the actual value
+      return template.replace(/{:(\w+)}/g, (_, key) => {
+        const value = params[key];
+        return typeof value === 'string' ? `'${value}'` : String(value);
+      });
+    }),
     collection: () => ({
-      getFirstListItem: vi.fn().mockRejectedValue(new Error('Not found')),
+      getFirstListItem: getFirstListItemFn,
       create: vi.fn().mockResolvedValue({}),
     }),
-  }),
+  } as any;
+}
+
+vi.mock('../src/services/pocketbase.ts', () => ({
+  getPocketBase: vi.fn().mockResolvedValue(
+    createMockPocketBase(vi.fn().mockRejectedValue(new Error('Not found')))
+  ),
 }));
 
 import webhookRoutes from '../src/routes/webhooks.ts';
@@ -30,12 +44,9 @@ describe('POST /api/webhooks/stripe', () => {
     vi.mocked(constructWebhookEvent).mockReset();
     vi.mocked(creditAccount).mockReset();
     vi.mocked(getPocketBase).mockReset();
-    vi.mocked(getPocketBase).mockResolvedValue({
-      collection: () => ({
-        getFirstListItem: vi.fn().mockRejectedValue(new Error('Not found')),
-        create: vi.fn().mockResolvedValue({}),
-      }),
-    } as any);
+    vi.mocked(getPocketBase).mockResolvedValue(
+      createMockPocketBase(vi.fn().mockRejectedValue(new Error('Not found')))
+    );
   });
 
   it('credits user on checkout.session.completed event', async () => {
@@ -104,12 +115,10 @@ describe('POST /api/webhooks/stripe', () => {
     vi.mocked(constructWebhookEvent).mockReturnValue(mockEvent as any);
 
     // Override PocketBase mock: getFirstListItem succeeds (session already in payments)
-    vi.mocked(getPocketBase).mockResolvedValueOnce({
-      collection: () => ({
-        getFirstListItem: vi.fn().mockResolvedValue({ id: 'payment-123' }),
-        create: vi.fn(),
-      }),
-    } as any);
+    const mockGetFirstListItem = vi.fn().mockResolvedValue({ id: 'payment-123' });
+    vi.mocked(getPocketBase).mockResolvedValueOnce(
+      createMockPocketBase(mockGetFirstListItem)
+    );
 
     const app = new Hono();
     app.route('/', webhookRoutes);
