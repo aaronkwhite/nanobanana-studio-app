@@ -84,7 +84,7 @@ migrate((db) => {
         }
       }
     ],
-    "indexes": [],
+    "indexes": ["CREATE UNIQUE INDEX idx_payments_stripe_session ON payments (stripe_session_id)"],
     "listRule": "@request.auth.id = user_id",
     "viewRule": "@request.auth.id = user_id",
     "createRule": null,
