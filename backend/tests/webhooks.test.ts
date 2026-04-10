@@ -1,6 +1,7 @@
 // backend/tests/webhooks.test.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Hono } from 'hono';
+import { createMockPocketBase } from './helpers/mockPocketBase';
 
 vi.mock('../src/services/stripe.ts', () => ({
   getStripe: vi.fn(),
@@ -11,22 +12,6 @@ vi.mock('../src/services/credits.ts', () => ({
   deductCredits: vi.fn(),
   getBalance: vi.fn(),
 }));
-// Helper to create a mock PocketBase instance with filter method
-function createMockPocketBase(getFirstListItemFn: any) {
-  return {
-    filter: vi.fn((template: string, params: Record<string, any>) => {
-      // Simulate PocketBase filter substitution: replace {:paramName} with the actual value
-      return template.replace(/{:(\w+)}/g, (_, key) => {
-        const value = params[key];
-        return typeof value === 'string' ? `'${value}'` : String(value);
-      });
-    }),
-    collection: () => ({
-      getFirstListItem: getFirstListItemFn,
-      create: vi.fn().mockResolvedValue({}),
-    }),
-  } as any;
-}
 
 vi.mock('../src/services/pocketbase.ts', () => ({
   getPocketBase: vi.fn().mockResolvedValue(

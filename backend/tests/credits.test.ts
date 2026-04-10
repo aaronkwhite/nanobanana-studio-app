@@ -24,27 +24,13 @@ describe('calculateCreditCost', () => {
   });
 });
 
+import { createMockPocketBase } from './helpers/mockPocketBase';
+
 // Mock getPocketBase before importing credits service
 vi.mock('../src/services/pocketbase.ts', () => ({
   getPocketBase: vi.fn(),
   verifyUserToken: vi.fn(),
 }));
-
-// Helper to create a mock PocketBase instance with filter method
-function createMockPocketBase(getFirstListItemFn: any) {
-  return {
-    filter: vi.fn((template: string, params: Record<string, any>) => {
-      // Simulate PocketBase filter substitution: replace {:paramName} with the actual value
-      return template.replace(/{:(\w+)}/g, (_, key) => {
-        const value = params[key];
-        return typeof value === 'string' ? `'${value}'` : String(value);
-      });
-    }),
-    collection: () => ({
-      getFirstListItem: getFirstListItemFn,
-    }),
-  } as any;
-}
 
 import { getBalance, deductCredits, creditAccount } from '../src/services/credits.ts';
 import { getPocketBase } from '../src/services/pocketbase.ts';
