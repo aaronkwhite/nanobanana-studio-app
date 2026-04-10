@@ -13,6 +13,7 @@ import type {
   ApiJobWithItems,
   CreditBalance,
   CheckoutSession,
+  CreditPackId,
 } from '$lib/types';
 
 // --- Jobs ---
@@ -132,6 +133,6 @@ export async function apiGetBalance(): Promise<CreditBalance> {
   return invoke<CreditBalance>('api_get_balance');
 }
 
-export async function apiPurchaseCredits(pack: string): Promise<CheckoutSession> {
+export async function apiPurchaseCredits(pack: CreditPackId): Promise<CheckoutSession> {
   return invoke<CheckoutSession>('api_purchase_credits', { request: { pack } });
 }
