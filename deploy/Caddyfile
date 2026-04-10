@@ -6,13 +6,13 @@ api.yourdomain.com {
 }
 
 pb.yourdomain.com {
-    # Restrict admin access by IP — uncomment and replace with your IP
-    # @admin path /_/*
-    # handle @admin {
-    #   basicauth admin {
-    #     admin JDJhJDE0J...  # bcrypt hash of your password
-    #   }
-    #   reverse_proxy localhost:8090
-    # }
+    @admin path /_/*
+    handle @admin {
+        # Uncomment and configure basic auth before exposing to the internet:
+        # basicauth admin {
+        #   admin JDJhJDE0J...  # bcrypt hash of your password
+        # }
+        reverse_proxy localhost:8090
+    }
     reverse_proxy localhost:8090
 }
