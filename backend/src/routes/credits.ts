@@ -18,33 +18,48 @@ credits.get('/balance', async (c) => {
 
 credits.post('/purchase', async (c) => {
   const userId = c.get('userId');
-  const body = await c.req.json<PurchaseRequest>();
+
+  let body: PurchaseRequest;
+  try {
+    body = await c.req.json<PurchaseRequest>();
+  } catch {
+    return c.json({ error: 'Invalid request body' }, 400);
+  }
 
   const pack = CREDIT_PACKS[body.pack];
   if (!pack) return c.json({ error: 'Invalid pack' }, 400);
 
   const stripe = getStripe();
-  const session = await stripe.checkout.sessions.create({
-    mode: 'payment',
-    line_items: [{
-      price_data: {
-        currency: 'usd',
-        unit_amount: pack.price_cents,
-        product_data: {
-          name: `${pack.credits} Credits`,
-          description: 'Nana Studio credit pack',
+  let session: Awaited<ReturnType<typeof stripe.checkout.sessions.create>>;
+  try {
+    session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      line_items: [{
+        price_data: {
+          currency: 'usd',
+          unit_amount: pack.price_cents,
+          product_data: {
+            name: `${pack.credits} Credits`,
+            description: 'Nana Studio credit pack',
+          },
         },
+        quantity: 1,
+      }],
+      metadata: {
+        user_id: userId,
+        pack: body.pack,
+        credits: pack.credits.toString(),
       },
-      quantity: 1,
-    }],
-    metadata: {
-      user_id: userId,
-      pack: body.pack,
-      credits: pack.credits.toString(),
-    },
-    success_url: 'nana-studio://credits/success',
-    cancel_url: 'nana-studio://credits/cancel',
-  });
+      success_url: 'nana-studio://credits/success',
+      cancel_url: 'nana-studio://credits/cancel',
+    });
+  } catch {
+    return c.json({ error: 'Failed to create checkout session' }, 500);
+  }
+
+  if (session.url === null) {
+    return c.json({ error: 'No checkout URL returned' }, 500);
+  }
 
   return c.json({ url: session.url });
 });
