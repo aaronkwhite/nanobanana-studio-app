@@ -10,6 +10,7 @@
   import CreditBalance from '$lib/components/CreditBalance.svelte';
 
   let { children } = $props();
+  let loading = $state(true);
 
   onMount(async () => {
     theme.set($theme);
@@ -21,6 +22,7 @@
     if (state) {
       await credits.refresh();
     }
+    loading = false;
   });
 </script>
 
@@ -31,13 +33,15 @@
 
 <Tooltip.Provider delayDuration={300}>
   <div class="min-h-screen">
-    {#if $isLoggedIn}
-      <header class="app-header">
-        <span class="app-title">Nana Studio</span>
-        <CreditBalance />
-      </header>
+    {#if !loading}
+      {#if $isLoggedIn}
+        <header class="app-header">
+          <span class="app-title">Nana Studio</span>
+          <CreditBalance />
+        </header>
+      {/if}
+      {@render children()}
     {/if}
-    {@render children()}
   </div>
 </Tooltip.Provider>
 

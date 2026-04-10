@@ -5,12 +5,16 @@
   import * as cmd from '$lib/utils/commands';
 
   let purchasing = $state(false);
+  let buyError = $state<string | null>(null);
 
   async function buyCredits(pack: 'starter' | 'standard' | 'pro') {
     purchasing = true;
+    buyError = null;
     try {
       const session = await cmd.apiPurchaseCredits(pack);
       await open(session.url);
+    } catch (err) {
+      buyError = err instanceof Error ? err.message : 'Purchase failed. Please try again.';
     } finally {
       purchasing = false;
     }
@@ -24,6 +28,9 @@
   <button class="buy-btn" onclick={() => buyCredits('standard')} disabled={purchasing}>
     {purchasing ? '…' : '+ Buy'}
   </button>
+  {#if buyError}
+    <span class="buy-error">{buyError}</span>
+  {/if}
 </div>
 
 <style>
@@ -42,4 +49,5 @@
     background: transparent;
     cursor: pointer;
   }
+  .buy-error { font-size: 0.75rem; color: var(--error, red); }
 </style>
