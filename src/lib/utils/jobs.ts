@@ -1,5 +1,5 @@
-import type { Job } from '$lib/types';
+import type { ApiJob } from '$lib/types';
 
-export function isActiveJob(job: Job): boolean {
+export function isActiveJob(job: ApiJob): boolean {
   return job.status === 'pending' || job.status === 'processing';
 }

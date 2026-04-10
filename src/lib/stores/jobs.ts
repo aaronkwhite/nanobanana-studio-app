@@ -1,16 +1,16 @@
 // src/lib/stores/jobs.ts
 import { writable, derived } from 'svelte/store';
-import type { Job, JobWithItems, BatchStatus, GeminiBatchState } from '$lib/types';
+import type { ApiJob } from '$lib/types';
 import * as cmd from '$lib/utils/commands';
 import { isActiveJob } from '$lib/utils/jobs';
 
 function createJobsStore() {
-  const { subscribe, set, update } = writable<Job[]>([]);
+  const { subscribe, set, update } = writable<ApiJob[]>([]);
   let pollTimeout: ReturnType<typeof setTimeout> | null = null;
   let isPolling = false;
 
   async function pollActiveJobs() {
-    let currentJobs: Job[] = [];
+    let currentJobs: ApiJob[] = [];
     const unsub = subscribe((j) => (currentJobs = j));
     unsub();
 
@@ -23,49 +23,14 @@ function createJobsStore() {
 
     for (const job of activeJobs) {
       try {
-        if (job.batch_job_name) {
-          const batch: BatchStatus = await cmd.pollBatch(job.batch_job_name);
-          const newStatus = mapBatchState(batch.state);
-
-          if (newStatus === 'completed' && job.batch_job_name) {
-            try {
-              await cmd.downloadResults(job.batch_job_name, job.id);
-              const updated = await cmd.getJob(job.id);
-              update((jobs) => jobs.map((j) => (j.id === job.id ? updated.job : j)));
-            } catch (err) {
-              console.error(`Failed to download results for ${job.id}:`, err);
-              update((jobs) =>
-                jobs.map((j) =>
-                  j.id === job.id ? { ...j, status: 'failed' as const } : j
-                )
-              );
-            }
-          } else {
-            // For non-completed states, update normally
-            update((jobs) =>
-              jobs.map((j) =>
-                j.id === job.id
-                  ? {
-                      ...j,
-                      status: newStatus,
-                      completed_items: batch.completed_requests,
-                      failed_items: batch.failed_requests,
-                    }
-                  : j
-              )
-            );
-          }
-        } else {
-          const updated: JobWithItems = await cmd.getJob(job.id);
-          update((jobs) => jobs.map((j) => (j.id === job.id ? updated.job : j)));
-        }
+        const updated = await cmd.apiGetJob(job.id);
+        update((jobs) => jobs.map((j) => (j.id === job.id ? updated.job : j)));
       } catch (err) {
         console.error(`Failed to poll job ${job.id}:`, err);
       }
     }
 
-    // Schedule next poll if there are still active jobs
-    let updatedJobs: Job[] = [];
+    let updatedJobs: ApiJob[] = [];
     const unsub2 = subscribe((j) => (updatedJobs = j));
     unsub2();
     const hasActiveJobs = updatedJobs.some(isActiveJob);
@@ -74,22 +39,6 @@ function createJobsStore() {
       pollTimeout = setTimeout(pollActiveJobs, 2000);
     } else {
       isPolling = false;
-    }
-  }
-
-  function mapBatchState(state: GeminiBatchState): Job['status'] {
-    switch (state) {
-      case 'JOB_STATE_SUCCEEDED':
-        return 'completed';
-      case 'JOB_STATE_FAILED':
-      case 'JOB_STATE_EXPIRED':
-        return 'failed';
-      case 'JOB_STATE_CANCELLED':
-        return 'cancelled';
-      case 'JOB_STATE_RUNNING':
-        return 'processing';
-      default:
-        return 'pending';
     }
   }
 
@@ -109,23 +58,20 @@ function createJobsStore() {
 
   return {
     subscribe,
-    async loadJobs(status?: 'active' | 'all') {
-      const jobs = await cmd.getJobs(status);
-      set(jobs);
-      const hasActive = jobs.some((j) => j.status === 'pending' || j.status === 'processing');
-      if (hasActive) startPolling();
+    loadJobs() {
+      set([]);
     },
-    addJob(job: Job) {
+    addJob(job: ApiJob) {
       update((jobs) => [job, ...jobs]);
       startPolling();
     },
-    updateJob(updated: Job) {
+    updateJob(updated: ApiJob) {
       update((jobs) => jobs.map((j) => (j.id === updated.id ? updated : j)));
     },
     removeJob(id: string) {
       update((jobs) => jobs.filter((j) => j.id !== id));
     },
-    setJobs(jobList: Job[]) {
+    setJobs(jobList: ApiJob[]) {
       set(jobList);
     },
     startPolling,

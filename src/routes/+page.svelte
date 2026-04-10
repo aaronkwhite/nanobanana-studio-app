@@ -3,16 +3,19 @@
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
   import { Header, ModeSelector, PromptForm, PromptInput, ImageDropZone, ImageChip, JobList } from '$lib/components';
+  import ModelPicker from '$lib/components/ModelPicker.svelte';
+  import ModePicker from '$lib/components/ModePicker.svelte';
+  import CostPreview from '$lib/components/CostPreview.svelte';
   import { Textarea } from '$lib/components/ui';
   import { jobs } from '$lib/stores/jobs';
-  import { config } from '$lib/stores/config';
-  import { createT2IJob, createI2IJob } from '$lib/utils/commands';
-  import { invoke } from '@tauri-apps/api/core';
+  import { credits } from '$lib/stores';
+  import { apiGenerate } from '$lib/utils/commands';
   import { dev } from '$app/environment';
   import { settings } from '$lib/stores/settings';
   import { mockMode } from '$lib/utils/mock-mode';
   import { createMockJobs } from '$lib/utils/mock-data';
-  import type { Job, JobMode, UploadedFile, OutputSize, AspectRatio } from '$lib/types';
+  import type { ApiJob, KieModel, ProcessingMode, JobMode, UploadedFile, OutputSize, AspectRatio } from '$lib/types';
+
   let mode: JobMode = $state('text-to-image');
   let prompts: string[] = $state([]);
   let i2iFiles: UploadedFile[] = $state([]);
@@ -22,6 +25,9 @@
   let outputSize: OutputSize = $state('1K');
   let aspectRatio: AspectRatio = $state('16:9');
   let temperature: number = $state(1);
+
+  let selectedModel: KieModel = $state('nano-banana-pro');
+  let selectedMode: ProcessingMode = $state('realtime');
 
   let settingsLoaded = false;
   $effect(() => {
@@ -39,9 +45,8 @@
   onMount(() => {
     if ($mockMode) {
       // Load mock data instead of real API calls
-      jobs.setJobs(createMockJobs());
+      jobs.setJobs(createMockJobs() as unknown as ApiJob[]);
     } else {
-      config.load();
       settings.load();
       jobs.loadJobs();
       jobs.startPolling();
@@ -57,40 +62,25 @@
     return () => jobs.stopPolling();
   });
 
-  function submitAndTrack(result: { job: Job }) {
-    jobs.addJob(result.job);
-    invoke('submit_batch', { jobId: result.job.id }).catch((err) => {
-      console.error('Failed to submit batch:', err);
-      jobs.updateJob({ ...result.job, status: 'failed' });
-    });
-  }
-
   async function handleSubmit() {
     if (submitting) return;
     submitting = true;
 
     try {
-
       if (mode === 'text-to-image') {
-        const result = await createT2IJob({
+        const result = await apiGenerate({
+          model: selectedModel,
+          resolution: outputSize,
           prompts,
-          output_size: outputSize,
-          temperature,
           aspect_ratio: aspectRatio,
+          mode: selectedMode,
         });
-        submitAndTrack(result);
+        jobs.addJob(result.job);
+        await credits.refresh();
         prompts = [];
       } else {
-        const result = await createI2IJob({
-          prompt: i2iPrompt,
-          image_paths: i2iFiles.map((f) => f.path),
-          output_size: outputSize,
-          temperature,
-          aspect_ratio: aspectRatio,
-        });
-        submitAndTrack(result);
-        i2iFiles = [];
-        i2iPrompt = '';
+        // Image-to-image not yet supported by backend API
+        console.warn('Image-to-image mode not yet available in the new API');
       }
     } catch (err) {
       console.error('Failed to submit job:', err);
@@ -108,6 +98,15 @@
 
 <main class="px-6 py-6 flex flex-col gap-4">
   <ModeSelector bind:mode />
+
+  <ModelPicker bind:value={selectedModel} />
+  <ModePicker bind:value={selectedMode} />
+  <CostPreview
+    model={selectedModel}
+    resolution={outputSize}
+    mode={selectedMode}
+    count={itemCount}
+  />
 
   <PromptForm
     bind:outputSize
