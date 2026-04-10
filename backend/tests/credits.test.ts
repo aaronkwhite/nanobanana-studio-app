@@ -106,6 +106,32 @@ describe('deductCredits', () => {
       reference_id: 'job-1',
     }));
   });
+
+  it('succeeds when balance exactly equals cost', async () => {
+    const mockCreate = vi.fn().mockResolvedValue({});
+    vi.mocked(getPocketBase).mockResolvedValue({
+      collection: () => ({
+        getFirstListItem: vi.fn().mockResolvedValue({ balance_after: 3 }),
+        create: mockCreate,
+      }),
+    } as any);
+
+    // nano-banana-pro 4K realtime = 3 credits, balance = 3 → exact match
+    const cost = await deductCredits({
+      userId: 'user-123',
+      model: 'nano-banana-pro',
+      resolution: '4K',
+      mode: 'realtime',
+      count: 1,
+      referenceId: 'job-exact',
+    });
+
+    expect(cost).toBe(3);
+    expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({
+      amount: -3,
+      balance_after: 0,
+    }));
+  });
 });
 
 describe('creditAccount', () => {
@@ -136,6 +162,50 @@ describe('creditAccount', () => {
       balance_after: 105,
       type: 'purchase',
       reference_id: 'stripe-session-1',
+    }));
+  });
+
+  it('credits correctly when starting balance is zero (first purchase)', async () => {
+    const mockCreate = vi.fn().mockResolvedValue({});
+    vi.mocked(getPocketBase).mockResolvedValue({
+      collection: () => ({
+        getFirstListItem: vi.fn().mockRejectedValue(new Error('Not found')),
+        create: mockCreate,
+      }),
+    } as any);
+
+    const newBalance = await creditAccount({
+      userId: 'user-123',
+      amount: 100,
+      type: 'purchase',
+      referenceId: 'stripe-session-1',
+    });
+
+    expect(newBalance).toBe(100);
+    expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({
+      amount: 100,
+      balance_after: 100,
+    }));
+  });
+
+  it('writes refund type to ledger correctly', async () => {
+    const mockCreate = vi.fn().mockResolvedValue({});
+    vi.mocked(getPocketBase).mockResolvedValue({
+      collection: () => ({
+        getFirstListItem: vi.fn().mockResolvedValue({ balance_after: 0 }),
+        create: mockCreate,
+      }),
+    } as any);
+
+    await creditAccount({
+      userId: 'user-123',
+      amount: 3,
+      type: 'refund',
+      referenceId: 'job-failed-1',
+    });
+
+    expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'refund',
     }));
   });
 });
