@@ -35,3 +35,7 @@ coverage/
 .logs/
 .worktrees/
 .superpowers/
+
+# PocketBase
+pocketbase/pocketbase
+pocketbase/pb_data/
