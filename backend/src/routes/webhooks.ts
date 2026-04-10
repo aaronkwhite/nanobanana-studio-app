@@ -32,7 +32,8 @@ webhooks.post('/stripe', async (c) => {
     // Deduplication: skip if this session was already processed
     try {
       await pb.collection('payments').getFirstListItem(
-        `stripe_session_id = "${session.id}"`
+        'stripe_session_id = {:sessionId}',
+        { sessionId: session.id }
       );
       // Already processed — acknowledge without re-crediting
       return c.json({ received: true });
@@ -40,19 +41,21 @@ webhooks.post('/stripe', async (c) => {
       // Not found = not yet processed, proceed
     }
 
-    await creditAccount({
-      userId: user_id,
-      amount: parseInt(credits, 10),
-      type: 'purchase',
-      referenceId: session.id,
-    });
-
+    // Write payment record first (acts as the dedup lock)
     await pb.collection('payments').create({
       user_id,
       stripe_session_id: session.id,
       credits_purchased: parseInt(credits, 10),
       amount_paid_cents: session.amount_total,
       status: 'complete',
+    });
+
+    // Then credit the account
+    await creditAccount({
+      userId: user_id,
+      amount: parseInt(credits, 10),
+      type: 'purchase',
+      referenceId: session.id,
     });
   }
 

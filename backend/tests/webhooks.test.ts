@@ -23,10 +23,19 @@ vi.mock('../src/services/pocketbase.ts', () => ({
 import webhookRoutes from '../src/routes/webhooks.ts';
 import { constructWebhookEvent } from '../src/services/stripe.ts';
 import { creditAccount } from '../src/services/credits.ts';
+import { getPocketBase } from '../src/services/pocketbase.ts';
 
 describe('POST /api/webhooks/stripe', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.mocked(constructWebhookEvent).mockReset();
+    vi.mocked(creditAccount).mockReset();
+    vi.mocked(getPocketBase).mockReset();
+    vi.mocked(getPocketBase).mockResolvedValue({
+      collection: () => ({
+        getFirstListItem: vi.fn().mockRejectedValue(new Error('Not found')),
+        create: vi.fn().mockResolvedValue({}),
+      }),
+    } as any);
   });
 
   it('credits user on checkout.session.completed event', async () => {
@@ -95,7 +104,6 @@ describe('POST /api/webhooks/stripe', () => {
     vi.mocked(constructWebhookEvent).mockReturnValue(mockEvent as any);
 
     // Override PocketBase mock: getFirstListItem succeeds (session already in payments)
-    const { getPocketBase } = await import('../src/services/pocketbase.ts');
     vi.mocked(getPocketBase).mockResolvedValueOnce({
       collection: () => ({
         getFirstListItem: vi.fn().mockResolvedValue({ id: 'payment-123' }),
