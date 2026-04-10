@@ -9,9 +9,15 @@ function createAuthStore() {
   return {
     subscribe,
     async load(): Promise<AuthState | null> {
-      const state = await cmd.getAuthState();
-      set(state);
-      return state;
+      try {
+        const state = await cmd.getAuthState();
+        set(state);
+        return state;
+      } catch {
+        // Keychain/store unavailable — treat as unauthenticated
+        set(null);
+        return null;
+      }
     },
     async login(email: string, password: string): Promise<void> {
       const state = await cmd.login(email, password);

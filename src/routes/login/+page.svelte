@@ -1,8 +1,7 @@
 <!-- src/routes/login/+page.svelte -->
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { auth } from '$lib/stores/auth';
-  import { credits } from '$lib/stores/credits';
+  import { auth, credits } from '$lib/stores';
 
   let email = $state('');
   let password = $state('');
@@ -10,12 +9,13 @@
   let loading = $state(false);
 
   async function handleLogin() {
+    if (loading) return;
     error = '';
     loading = true;
     try {
       await auth.login(email, password);
       await credits.refresh();
-      goto('/');
+      await goto('/');
     } catch (err) {
       error = err instanceof Error ? err.message : 'Login failed';
     } finally {

@@ -8,10 +8,17 @@ function createCreditsStore() {
   return {
     subscribe,
     async refresh(): Promise<void> {
-      const result = await cmd.apiGetBalance();
-      set(result.balance);
+      try {
+        const result = await cmd.apiGetBalance();
+        set(result.balance);
+      } catch (err) {
+        console.error('Failed to refresh credit balance:', err);
+        // Leave existing balance in place
+      }
     },
-    set,
+    setBalance(n: number): void {
+      set(n);
+    },
   };
 }
 
