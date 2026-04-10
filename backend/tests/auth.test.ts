@@ -1,5 +1,5 @@
 // backend/tests/auth.test.ts
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Hono } from 'hono';
 
 // Mock the pocketbase service module before importing the middleware
@@ -13,6 +13,10 @@ import { authMiddleware } from '../src/middleware/auth.ts';
 import { verifyUserToken } from '../src/services/pocketbase.ts';
 
 describe('authMiddleware', () => {
+  beforeEach(() => {
+    vi.mocked(verifyUserToken).mockReset();
+  });
+
   it('rejects requests with no Authorization header', async () => {
     const app = new Hono();
     app.use('*', authMiddleware);
