@@ -3,11 +3,9 @@ import { invoke } from '@tauri-apps/api/core';
 import type {
   Job,
   JobWithItems,
-  ConfigStatus,
   CreateT2IJobRequest,
   CreateI2IJobRequest,
   UploadedFile,
-  BatchStatus,
   AuthState,
   ApiGenerateRequest,
   ApiJobWithItems,
@@ -36,38 +34,6 @@ export async function createI2IJob(request: CreateI2IJobRequest): Promise<JobWit
 
 export async function deleteJob(id: string): Promise<void> {
   return invoke<void>('delete_job', { id });
-}
-
-// --- Batch ---
-
-export async function pollBatch(batchName: string): Promise<BatchStatus> {
-  return invoke<BatchStatus>('poll_batch', { batchName });
-}
-
-export async function downloadResults(batchName: string, jobId: string): Promise<void> {
-  return invoke<void>('download_results', { batchName, jobId });
-}
-
-export async function retryJob(jobId: string): Promise<void> {
-  return invoke<void>('submit_batch', { jobId });
-}
-
-// --- Config ---
-
-export async function getConfig(): Promise<ConfigStatus> {
-  return invoke<ConfigStatus>('get_config');
-}
-
-export async function saveConfig(apiKey: string): Promise<void> {
-  return invoke<void>('save_config', { apiKey });
-}
-
-export async function deleteConfig(): Promise<void> {
-  return invoke<void>('delete_config');
-}
-
-export async function validateApiKey(apiKey: string): Promise<boolean> {
-  return invoke<boolean>('validate_api_key', { apiKey });
 }
 
 // --- Files ---

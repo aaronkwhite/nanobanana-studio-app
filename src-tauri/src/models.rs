@@ -77,24 +77,10 @@ pub struct CreateI2IJobRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ConfigStatus {
-    pub has_key: bool,
-    pub masked: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UploadedFile {
     pub id: String,
     pub path: String,
     pub name: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BatchStatus {
-    pub state: String,
-    pub total_requests: i32,
-    pub completed_requests: i32,
-    pub failed_requests: i32,
 }
 
 // Auth

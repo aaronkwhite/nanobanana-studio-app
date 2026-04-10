@@ -223,23 +223,6 @@ pub fn create_i2i_job(app: AppHandle, request: CreateI2IJobRequest) -> Result<Jo
 
 #[tauri::command]
 pub async fn delete_job(app: AppHandle, id: String) -> Result<(), String> {
-    let batch_name: Option<String> = {
-        let db = get_db(&app);
-        let conn = db.conn.lock().map_err(|e| e.to_string())?;
-        conn.query_row(
-            "SELECT batch_job_name FROM jobs WHERE id = ?1 AND status IN ('pending', 'processing')",
-            params![id],
-            |row| row.get(0),
-        )
-        .ok()
-        .flatten()
-    };
-
-    // Cancel batch if active (fire-and-forget)
-    if let Some(ref name) = batch_name {
-        let _ = super::batch::cancel_batch(app.clone(), name.clone()).await;
-    }
-
     // Delete from DB
     let db = get_db(&app);
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
