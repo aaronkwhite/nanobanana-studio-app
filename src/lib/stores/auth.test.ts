@@ -11,12 +11,12 @@ vi.mock('$lib/utils/commands', () => ({
 import { auth, isLoggedIn, userId } from './auth';
 import * as cmd from '$lib/utils/commands';
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.mocked(cmd.getAuthState).mockReset();
   vi.mocked(cmd.login).mockReset();
-  vi.mocked(cmd.logout).mockReset();
+  vi.mocked(cmd.logout).mockResolvedValue(undefined);
   // Reset store state between tests
-  auth.logout().catch(() => {});
+  await auth.logout();
 });
 
 describe('auth store', () => {

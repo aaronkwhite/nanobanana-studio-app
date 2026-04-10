@@ -13,8 +13,8 @@ function createAuthStore() {
         const state = await cmd.getAuthState();
         set(state);
         return state;
-      } catch {
-        // Keychain/store unavailable — treat as unauthenticated
+      } catch (err) {
+        console.warn('Auth state unavailable, treating as unauthenticated:', err);
         set(null);
         return null;
       }
