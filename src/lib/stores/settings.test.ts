@@ -32,6 +32,21 @@ describe('settings store', () => {
     expect(s.temperature).toBe(0.5);
   });
 
+  it('validates loaded size/ratio against the literal list', async () => {
+    vi.mocked(invoke).mockResolvedValueOnce({
+      default_output_size: 'XXXL',
+      default_aspect_ratio: '21:9',
+      default_temperature: '1',
+    });
+
+    await settings.load();
+
+    const s = get(settings);
+    // Invalid values must fall back to defaults, not be coerced through.
+    expect(s.output_size).toBe('1K');
+    expect(s.aspect_ratio).toBe('16:9');
+  });
+
   it('falls back to defaults on load error', async () => {
     vi.mocked(invoke).mockRejectedValueOnce(new Error('DB error'));
 

@@ -1,6 +1,7 @@
 // src/lib/stores/settings.ts
 import { writable } from 'svelte/store';
-import type { GenerationDefaults } from '$lib/types';
+import type { GenerationDefaults, OutputSize, AspectRatio } from '$lib/types';
+import { OUTPUT_SIZES, ASPECT_RATIOS } from '$lib/types';
 import * as cmd from '$lib/utils/commands';
 
 const defaultSettings: GenerationDefaults = {
@@ -8,6 +9,14 @@ const defaultSettings: GenerationDefaults = {
   aspect_ratio: '16:9',
   temperature: 1,
 };
+
+function asOutputSize(v: string | undefined, fallback: OutputSize): OutputSize {
+  return v && v in OUTPUT_SIZES ? (v as OutputSize) : fallback;
+}
+
+function asAspectRatio(v: string | undefined, fallback: AspectRatio): AspectRatio {
+  return v && v in ASPECT_RATIOS ? (v as AspectRatio) : fallback;
+}
 
 function createSettingsStore() {
   const { subscribe, set, update } = writable<GenerationDefaults>(defaultSettings);
@@ -18,8 +27,8 @@ function createSettingsStore() {
       try {
         const all = await cmd.getAllSettings();
         const loaded: GenerationDefaults = {
-          output_size: (all['default_output_size'] as any) ?? defaultSettings.output_size,
-          aspect_ratio: (all['default_aspect_ratio'] as any) ?? defaultSettings.aspect_ratio,
+          output_size: asOutputSize(all['default_output_size'], defaultSettings.output_size),
+          aspect_ratio: asAspectRatio(all['default_aspect_ratio'], defaultSettings.aspect_ratio),
           temperature: all['default_temperature']
             ? Number(all['default_temperature'])
             : defaultSettings.temperature,

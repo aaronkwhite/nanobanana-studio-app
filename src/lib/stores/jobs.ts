@@ -1,25 +1,36 @@
 // src/lib/stores/jobs.ts
-import { writable, derived } from 'svelte/store';
+import { writable, derived, get } from 'svelte/store';
+import { dev } from '$app/environment';
 import type { Job, JobWithItems, BatchStatus, GeminiBatchState } from '$lib/types';
 import * as cmd from '$lib/utils/commands';
 import { isActiveJob } from '$lib/utils/jobs';
 
+const BASE_POLL_MS = 2000;
+const MAX_POLL_MS = 30_000;
+
 function createJobsStore() {
-  const { subscribe, set, update } = writable<Job[]>([]);
+  const store = writable<Job[]>([]);
+  const { subscribe, set, update } = store;
   let pollTimeout: ReturnType<typeof setTimeout> | null = null;
   let isPolling = false;
+  let consecutiveFailures = 0;
+
+  function nextPollDelay(): number {
+    if (consecutiveFailures === 0) return BASE_POLL_MS;
+    // 2s, 4s, 8s, 16s, 30s, 30s ...
+    return Math.min(BASE_POLL_MS * 2 ** consecutiveFailures, MAX_POLL_MS);
+  }
 
   async function pollActiveJobs() {
-    let currentJobs: Job[] = [];
-    const unsub = subscribe((j) => (currentJobs = j));
-    unsub();
-
-    const activeJobs = currentJobs.filter(isActiveJob);
+    const activeJobs = get(store).filter(isActiveJob);
 
     if (activeJobs.length === 0) {
       isPolling = false;
+      consecutiveFailures = 0;
       return;
     }
+
+    let anyFailed = false;
 
     for (const job of activeJobs) {
       try {
@@ -61,19 +72,22 @@ function createJobsStore() {
         }
       } catch (err) {
         console.error(`Failed to poll job ${job.id}:`, err);
+        anyFailed = true;
       }
     }
 
-    // Schedule next poll if there are still active jobs
-    let updatedJobs: Job[] = [];
-    const unsub2 = subscribe((j) => (updatedJobs = j));
-    unsub2();
-    const hasActiveJobs = updatedJobs.some(isActiveJob);
+    if (anyFailed) {
+      consecutiveFailures += 1;
+    } else {
+      consecutiveFailures = 0;
+    }
 
+    const hasActiveJobs = get(store).some(isActiveJob);
     if (hasActiveJobs) {
-      pollTimeout = setTimeout(pollActiveJobs, 2000);
+      pollTimeout = setTimeout(pollActiveJobs, nextPollDelay());
     } else {
       isPolling = false;
+      consecutiveFailures = 0;
     }
   }
 
@@ -125,7 +139,8 @@ function createJobsStore() {
     removeJob(id: string) {
       update((jobs) => jobs.filter((j) => j.id !== id));
     },
-    setJobs(jobList: Job[]) {
+    loadMocks(jobList: Job[]) {
+      if (!dev) return;
       set(jobList);
     },
     startPolling,

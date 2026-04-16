@@ -332,7 +332,9 @@ pub async fn download_results(
 
         let key = parsed["key"].as_str().unwrap_or("").to_string();
 
-        if let Some(error) = parsed["error"].as_str() {
+        // Gemini returns errors as {"code": ..., "message": ..., "status": ...}
+        // not as a bare string. Pull the message field.
+        if let Some(error) = parsed["error"]["message"].as_str() {
             let error = error.to_string();
             let db = get_db(&app);
             let conn = db.conn.lock().map_err(|e| e.to_string())?;

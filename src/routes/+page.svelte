@@ -40,7 +40,7 @@
   onMount(() => {
     if ($mockMode) {
       // Load mock data instead of real API calls
-      jobs.setJobs(createMockJobs());
+      jobs.loadMocks(createMockJobs());
     } else {
       config.load();
       settings.load();
