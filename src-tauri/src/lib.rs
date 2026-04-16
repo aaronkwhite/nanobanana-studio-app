@@ -14,14 +14,25 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
-            // Initialize logging in debug mode
-            if cfg!(debug_assertions) {
-                app.handle().plugin(
-                    tauri_plugin_log::Builder::default()
-                        .level(log::LevelFilter::Info)
-                        .build(),
-                )?;
-            }
+            // Logging: stdout + webview console in debug, rotating file
+            // in $APPDATA/logs in release so crash diagnosis isn't blind.
+            let log_builder = if cfg!(debug_assertions) {
+                tauri_plugin_log::Builder::default()
+                    .level(log::LevelFilter::Info)
+                    .targets([
+                        tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Stdout),
+                        tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Webview),
+                    ])
+            } else {
+                tauri_plugin_log::Builder::default()
+                    .level(log::LevelFilter::Warn)
+                    .max_file_size(2 * 1024 * 1024) // 2 MiB per file
+                    .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepAll)
+                    .targets([tauri_plugin_log::Target::new(
+                        tauri_plugin_log::TargetKind::LogDir { file_name: None },
+                    )])
+            };
+            app.handle().plugin(log_builder.build())?;
 
             // Shared HTTP client: explicit timeouts so a stalled Gemini
             // endpoint can't wedge a batch command forever.
