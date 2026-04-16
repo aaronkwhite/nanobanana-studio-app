@@ -257,6 +257,26 @@ pub async fn download_results(
     // Validate batch_name to prevent SSRF
     validate_batch_name(&batch_name)?;
 
+    // CAS guard: claim the job by flipping processing -> downloading.
+    // A concurrent download_results or a mid-flight delete_job will see
+    // the non-'processing' state and bail, preventing orphan result files
+    // and duplicate image writes. On startup we reset any stranded
+    // 'downloading' rows back to 'processing' so a crash is recoverable.
+    {
+        let db = get_db(&app);
+        let conn = db.conn.lock().map_err(|e| e.to_string())?;
+        let affected = conn
+            .execute(
+                "UPDATE jobs SET status = 'downloading', updated_at = ?1
+                 WHERE id = ?2 AND status = 'processing'",
+                params![chrono::Utc::now().to_rfc3339(), job_id],
+            )
+            .map_err(|e| e.to_string())?;
+        if affected == 0 {
+            return Err("Job is not in processing state (already downloaded, cancelled, or deleted)".to_string());
+        }
+    }
+
     let api_key = get_api_key(&app)?;
     let client = app.state::<Client>();
 

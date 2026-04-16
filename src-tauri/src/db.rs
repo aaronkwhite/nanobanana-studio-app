@@ -61,6 +61,14 @@ impl Database {
             "#,
         )?;
 
+        // Crash recovery: if the app was killed mid-download, the job is
+        // stranded in 'downloading'. Reset so the next poll tick can
+        // re-enter download_results via its CAS guard.
+        conn.execute(
+            "UPDATE jobs SET status = 'processing' WHERE status = 'downloading'",
+            [],
+        )?;
+
         Ok(Self {
             conn: Mutex::new(conn),
         })
@@ -69,4 +77,108 @@ impl Database {
 
 pub fn get_db(app: &AppHandle) -> &Database {
     app.state::<Database>().inner()
+}
+
+#[cfg(test)]
+mod tests {
+    use rusqlite::{params, Connection};
+
+    fn seed_job(conn: &Connection, id: &str, status: &str) {
+        conn.execute(
+            "INSERT INTO jobs (id, status, mode, prompt) VALUES (?1, ?2, 'text-to-image', 'p')",
+            params![id, status],
+        )
+        .unwrap();
+    }
+
+    fn setup() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            r#"
+            CREATE TABLE jobs (
+                id TEXT PRIMARY KEY,
+                status TEXT NOT NULL DEFAULT 'pending',
+                mode TEXT NOT NULL DEFAULT 'text-to-image',
+                prompt TEXT NOT NULL,
+                updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            "#,
+        )
+        .unwrap();
+        conn
+    }
+
+    #[test]
+    fn cas_claim_affects_only_processing_rows() {
+        let conn = setup();
+        seed_job(&conn, "pending-1", "pending");
+        seed_job(&conn, "processing-1", "processing");
+        seed_job(&conn, "downloading-1", "downloading");
+
+        let affected = conn
+            .execute(
+                "UPDATE jobs SET status = 'downloading' WHERE id = ?1 AND status = 'processing'",
+                params!["processing-1"],
+            )
+            .unwrap();
+        assert_eq!(affected, 1);
+
+        let after: String = conn
+            .query_row("SELECT status FROM jobs WHERE id = ?1", params!["processing-1"], |r| r.get(0))
+            .unwrap();
+        assert_eq!(after, "downloading");
+    }
+
+    #[test]
+    fn cas_claim_rejects_already_downloading() {
+        let conn = setup();
+        seed_job(&conn, "job-1", "downloading");
+
+        let affected = conn
+            .execute(
+                "UPDATE jobs SET status = 'downloading' WHERE id = ?1 AND status = 'processing'",
+                params!["job-1"],
+            )
+            .unwrap();
+        assert_eq!(affected, 0);
+    }
+
+    #[test]
+    fn cas_claim_rejects_deleted_job() {
+        let conn = setup();
+        // no seed
+        let affected = conn
+            .execute(
+                "UPDATE jobs SET status = 'downloading' WHERE id = ?1 AND status = 'processing'",
+                params!["missing"],
+            )
+            .unwrap();
+        assert_eq!(affected, 0);
+    }
+
+    #[test]
+    fn crash_recovery_resets_downloading_to_processing() {
+        let conn = setup();
+        seed_job(&conn, "stranded", "downloading");
+        seed_job(&conn, "done", "completed");
+        seed_job(&conn, "active", "processing");
+
+        let affected = conn
+            .execute(
+                "UPDATE jobs SET status = 'processing' WHERE status = 'downloading'",
+                [],
+            )
+            .unwrap();
+        assert_eq!(affected, 1);
+
+        let stranded: String = conn
+            .query_row("SELECT status FROM jobs WHERE id = ?1", params!["stranded"], |r| r.get(0))
+            .unwrap();
+        assert_eq!(stranded, "processing");
+
+        let done: String = conn
+            .query_row("SELECT status FROM jobs WHERE id = ?1", params!["done"], |r| r.get(0))
+            .unwrap();
+        assert_eq!(done, "completed");
+    }
 }

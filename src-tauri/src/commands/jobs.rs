@@ -231,21 +231,30 @@ pub fn create_i2i_job(app: AppHandle, request: CreateI2IJobRequest) -> Result<Jo
 
 #[tauri::command]
 pub async fn delete_job(app: AppHandle, id: String) -> Result<(), String> {
-    let batch_name: Option<String> = {
+    let (status, batch_name): (String, Option<String>) = {
         let db = get_db(&app);
         let conn = db.conn.lock().map_err(|e| e.to_string())?;
         conn.query_row(
-            "SELECT batch_job_name FROM jobs WHERE id = ?1 AND status IN ('pending', 'processing')",
+            "SELECT status, batch_job_name FROM jobs WHERE id = ?1",
             params![id],
-            |row| row.get(0),
+            |row| Ok((row.get(0)?, row.get(1)?)),
         )
-        .ok()
-        .flatten()
+        .map_err(|e| e.to_string())?
     };
 
-    // Cancel batch if active (fire-and-forget)
-    if let Some(ref name) = batch_name {
-        let _ = super::batch::cancel_batch(app.clone(), name.clone()).await;
+    // Refuse to delete while download_results is mid-flight — letting it
+    // proceed would leave orphan images on disk and race the row deletes.
+    if status == "downloading" {
+        return Err(
+            "Cannot delete job while results are being downloaded. Try again in a moment."
+                .to_string(),
+        );
+    }
+
+    // Cancel batch if still active (pending/processing). Terminal states
+    // (completed/failed/cancelled) don't need a cancel call.
+    if (status == "pending" || status == "processing") && batch_name.is_some() {
+        let _ = super::batch::cancel_batch(app.clone(), batch_name.unwrap()).await;
     }
 
     // Delete from DB atomically (job_items FK references jobs.id)
