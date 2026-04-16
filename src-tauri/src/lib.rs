@@ -4,6 +4,7 @@ mod models;
 pub mod paths;
 
 use db::Database;
+use std::time::Duration;
 use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -21,6 +22,14 @@ pub fn run() {
                         .build(),
                 )?;
             }
+
+            // Shared HTTP client: explicit timeouts so a stalled Gemini
+            // endpoint can't wedge a batch command forever.
+            let http = reqwest::Client::builder()
+                .connect_timeout(Duration::from_secs(10))
+                .timeout(Duration::from_secs(600))
+                .build()?;
+            app.manage(http);
 
             // Initialize database
             let app_data_dir = app.path().app_data_dir()?;

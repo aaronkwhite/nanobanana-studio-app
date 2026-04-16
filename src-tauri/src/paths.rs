@@ -12,20 +12,18 @@ pub fn get_uploads_dir(app: &AppHandle) -> Result<PathBuf, String> {
             |row| row.get(0),
         )
         .ok();
-    if let Some(dir) = custom {
-        if !dir.is_empty() {
-            let path = PathBuf::from(dir);
-            std::fs::create_dir_all(&path).map_err(|e| e.to_string())?;
-            return Ok(path);
-        }
-    }
-    let default = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| e.to_string())?
-        .join("uploads");
-    std::fs::create_dir_all(&default).map_err(|e| e.to_string())?;
-    Ok(default)
+    let raw = if let Some(dir) = custom.filter(|d| !d.is_empty()) {
+        PathBuf::from(dir)
+    } else {
+        app.path()
+            .app_data_dir()
+            .map_err(|e| e.to_string())?
+            .join("uploads")
+    };
+    std::fs::create_dir_all(&raw).map_err(|e| e.to_string())?;
+    // Canonicalize so callers can safely starts_with() compare against
+    // canonicalized input paths. On macOS this resolves /var -> /private/var.
+    raw.canonicalize().map_err(|e| e.to_string())
 }
 
 pub fn get_results_dir(app: &AppHandle) -> Result<PathBuf, String> {

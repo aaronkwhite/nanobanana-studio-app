@@ -107,7 +107,7 @@ pub async fn submit_batch(app: AppHandle, job_id: String) -> Result<(), String> 
     let jsonl_path = temp_dir.join(format!("batch-{}-{}.jsonl", mode, chrono::Utc::now().timestamp()));
     fs::write(&jsonl_path, &jsonl_content).map_err(|e| format!("Failed to write JSONL: {}", e))?;
 
-    let client = Client::new();
+    let client = app.state::<Client>();
 
     // Step 1: Initiate resumable upload
     let jsonl_bytes = jsonl_content.as_bytes();
@@ -220,7 +220,7 @@ pub async fn poll_batch(app: AppHandle, batch_name: String) -> Result<BatchStatu
     validate_batch_name(&batch_name)?;
 
     let api_key = get_api_key(&app)?;
-    let client = Client::new();
+    let client = app.state::<Client>();
 
     let resp = client
         .get(format!("{}/v1beta/{}", GEMINI_BASE, batch_name))
@@ -258,7 +258,7 @@ pub async fn download_results(
     validate_batch_name(&batch_name)?;
 
     let api_key = get_api_key(&app)?;
-    let client = Client::new();
+    let client = app.state::<Client>();
 
     // Get batch to find result file
     let resp = client
@@ -420,7 +420,7 @@ pub async fn cancel_batch(app: AppHandle, batch_name: String) -> Result<(), Stri
     validate_batch_name(&batch_name)?;
 
     let api_key = get_api_key(&app)?;
-    let client = Client::new();
+    let client = app.state::<Client>();
 
     let _resp = client
         .post(format!("{}/v1beta/{}:cancel", GEMINI_BASE, batch_name))
@@ -444,8 +444,8 @@ pub async fn cancel_batch(app: AppHandle, batch_name: String) -> Result<(), Stri
 }
 
 #[tauri::command]
-pub async fn validate_api_key(_app: AppHandle, api_key: String) -> Result<bool, String> {
-    let client = Client::new();
+pub async fn validate_api_key(app: AppHandle, api_key: String) -> Result<bool, String> {
+    let client = app.state::<Client>();
 
     let resp = client
         .get(format!(

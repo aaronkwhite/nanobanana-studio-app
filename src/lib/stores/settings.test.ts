@@ -65,6 +65,17 @@ describe('settings store', () => {
     });
   });
 
+  it('rolls back store state on save failure', async () => {
+    vi.mocked(invoke).mockRejectedValueOnce(new Error('disk full'));
+
+    const before = get(settings);
+
+    await expect(settings.update({ output_size: '4K' })).rejects.toThrow('disk full');
+
+    const after = get(settings);
+    expect(after).toEqual(before);
+  });
+
   it('resets to defaults and persists', async () => {
     vi.mocked(invoke).mockResolvedValue(undefined);
 

@@ -82,13 +82,15 @@ pub fn get_job(app: AppHandle, id: String) -> Result<JobWithItems, String> {
 #[tauri::command]
 pub fn create_t2i_job(app: AppHandle, request: CreateT2IJobRequest) -> Result<JobWithItems, String> {
     let db = get_db(&app);
-    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    let mut conn = db.conn.lock().map_err(|e| e.to_string())?;
 
     let job_id = Uuid::new_v4().to_string();
     let first_prompt = request.prompts.first().cloned().unwrap_or_default();
     let total_items = request.prompts.len() as i32;
 
-    conn.execute(
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+
+    tx.execute(
         "INSERT INTO jobs (id, mode, prompt, output_size, temperature, aspect_ratio, total_items, status)
          VALUES (?1, 'text-to-image', ?2, ?3, ?4, ?5, ?6, 'pending')",
         params![
@@ -105,7 +107,7 @@ pub fn create_t2i_job(app: AppHandle, request: CreateT2IJobRequest) -> Result<Jo
     let mut items = Vec::new();
     for prompt in &request.prompts {
         let item_id = Uuid::new_v4().to_string();
-        conn.execute(
+        tx.execute(
             "INSERT INTO job_items (id, job_id, input_prompt, status)
              VALUES (?1, ?2, ?3, 'pending')",
             params![item_id, job_id, prompt],
@@ -124,6 +126,8 @@ pub fn create_t2i_job(app: AppHandle, request: CreateT2IJobRequest) -> Result<Jo
             updated_at: chrono::Utc::now().to_rfc3339(),
         });
     }
+
+    tx.commit().map_err(|e| e.to_string())?;
 
     let job = Job {
         id: job_id,
@@ -159,12 +163,14 @@ pub fn create_i2i_job(app: AppHandle, request: CreateI2IJobRequest) -> Result<Jo
     }
 
     let db = get_db(&app);
-    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    let mut conn = db.conn.lock().map_err(|e| e.to_string())?;
 
     let job_id = Uuid::new_v4().to_string();
     let total_items = request.image_paths.len() as i32;
 
-    conn.execute(
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+
+    tx.execute(
         "INSERT INTO jobs (id, mode, prompt, output_size, temperature, aspect_ratio, total_items, status)
          VALUES (?1, 'image-to-image', ?2, ?3, ?4, ?5, ?6, 'pending')",
         params![
@@ -181,7 +187,7 @@ pub fn create_i2i_job(app: AppHandle, request: CreateI2IJobRequest) -> Result<Jo
     let mut items = Vec::new();
     for image_path in &request.image_paths {
         let item_id = Uuid::new_v4().to_string();
-        conn.execute(
+        tx.execute(
             "INSERT INTO job_items (id, job_id, input_image_path, status)
              VALUES (?1, ?2, ?3, 'pending')",
             params![item_id, job_id, image_path],
@@ -200,6 +206,8 @@ pub fn create_i2i_job(app: AppHandle, request: CreateI2IJobRequest) -> Result<Jo
             updated_at: chrono::Utc::now().to_rfc3339(),
         });
     }
+
+    tx.commit().map_err(|e| e.to_string())?;
 
     let job = Job {
         id: job_id,
@@ -240,13 +248,15 @@ pub async fn delete_job(app: AppHandle, id: String) -> Result<(), String> {
         let _ = super::batch::cancel_batch(app.clone(), name.clone()).await;
     }
 
-    // Delete from DB
+    // Delete from DB atomically (job_items FK references jobs.id)
     let db = get_db(&app);
-    let conn = db.conn.lock().map_err(|e| e.to_string())?;
-    conn.execute("DELETE FROM job_items WHERE job_id = ?1", params![id])
+    let mut conn = db.conn.lock().map_err(|e| e.to_string())?;
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    tx.execute("DELETE FROM job_items WHERE job_id = ?1", params![id])
         .map_err(|e| e.to_string())?;
-    conn.execute("DELETE FROM jobs WHERE id = ?1", params![id])
+    tx.execute("DELETE FROM jobs WHERE id = ?1", params![id])
         .map_err(|e| e.to_string())?;
+    tx.commit().map_err(|e| e.to_string())?;
 
     Ok(())
 }

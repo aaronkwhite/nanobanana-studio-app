@@ -30,15 +30,15 @@ function createSettingsStore() {
       }
     },
     async update(partial: Partial<GenerationDefaults>) {
-      update((current) => {
-        const next = { ...current, ...partial };
-        // Save each changed field to DB
-        if (partial.output_size) cmd.saveSetting('default_output_size', partial.output_size);
-        if (partial.aspect_ratio) cmd.saveSetting('default_aspect_ratio', partial.aspect_ratio);
-        if (partial.temperature !== undefined)
-          cmd.saveSetting('default_temperature', String(partial.temperature));
-        return next;
-      });
+      // Persist first so the store only reflects values that made it to DB.
+      // Callers can catch and show an error if persistence fails.
+      const writes: Promise<void>[] = [];
+      if (partial.output_size) writes.push(cmd.saveSetting('default_output_size', partial.output_size));
+      if (partial.aspect_ratio) writes.push(cmd.saveSetting('default_aspect_ratio', partial.aspect_ratio));
+      if (partial.temperature !== undefined)
+        writes.push(cmd.saveSetting('default_temperature', String(partial.temperature)));
+      await Promise.all(writes);
+      update((current) => ({ ...current, ...partial }));
     },
     async reset() {
       set(defaultSettings);
