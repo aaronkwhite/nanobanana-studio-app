@@ -21,13 +21,38 @@ pub async fn submit_batch(app: AppHandle, job_id: String) -> Result<(), String> 
     let api_key = get_api_key(&app)?;
     let app_data_dir = get_app_data_dir(&app)?;
 
-    // Read job and items from DB (scoped to drop lock before await)
+    // Read job metadata + items needing submission (pending or failed).
+    // Using a transaction to also reset any failed items back to pending
+    // and zero out the failed_items counter, so a retry submits only the
+    // subset that didn't succeed the first time (completed items are not
+    // re-billed, and download_results won't overwrite their saved output).
     let (mode, temperature, prompt, output_size, aspect_ratio, items) = {
         let db = get_db(&app);
-        let conn = db.conn.lock().map_err(|e| e.to_string())?;
+        let mut conn = db.conn.lock().map_err(|e| e.to_string())?;
+        let tx = conn.transaction().map_err(|e| e.to_string())?;
 
-        // Consolidate 4 queries into 1
-        let (mode, temperature, prompt, output_size, aspect_ratio): (String, f64, String, String, String) = conn
+        let status: String = tx
+            .query_row(
+                "SELECT status FROM jobs WHERE id = ?1",
+                params![job_id],
+                |row| row.get(0),
+            )
+            .map_err(|e| e.to_string())?;
+
+        if status == "processing" || status == "downloading" {
+            return Err(format!(
+                "Cannot submit: job is already {}. Wait for it to finish.",
+                status
+            ));
+        }
+
+        let (mode, temperature, prompt, output_size, aspect_ratio): (
+            String,
+            f64,
+            String,
+            String,
+            String,
+        ) = tx
             .query_row(
                 "SELECT mode, temperature, prompt, output_size, aspect_ratio FROM jobs WHERE id = ?1",
                 params![job_id],
@@ -35,8 +60,25 @@ pub async fn submit_batch(app: AppHandle, job_id: String) -> Result<(), String> 
             )
             .map_err(|e| e.to_string())?;
 
-        let mut stmt = conn
-            .prepare("SELECT id, input_prompt, input_image_path FROM job_items WHERE job_id = ?1")
+        let now = chrono::Utc::now().to_rfc3339();
+        tx.execute(
+            "UPDATE job_items SET status = 'pending', error = NULL, updated_at = ?1
+             WHERE job_id = ?2 AND status = 'failed'",
+            params![now, job_id],
+        )
+        .map_err(|e| e.to_string())?;
+
+        tx.execute(
+            "UPDATE jobs SET failed_items = 0, updated_at = ?1 WHERE id = ?2",
+            params![now, job_id],
+        )
+        .map_err(|e| e.to_string())?;
+
+        let mut stmt = tx
+            .prepare(
+                "SELECT id, input_prompt, input_image_path FROM job_items
+                 WHERE job_id = ?1 AND status = 'pending'",
+            )
             .map_err(|e| e.to_string())?;
 
         let items: Vec<(String, Option<String>, Option<String>)> = stmt
@@ -50,6 +92,13 @@ pub async fn submit_batch(app: AppHandle, job_id: String) -> Result<(), String> 
             .map_err(|e| e.to_string())?
             .collect::<Result<Vec<_>, _>>()
             .map_err(|e| e.to_string())?;
+
+        drop(stmt);
+        tx.commit().map_err(|e| e.to_string())?;
+
+        if items.is_empty() {
+            return Err("Nothing to submit — all items already completed.".to_string());
+        }
 
         (mode, temperature, prompt, output_size, aspect_ratio, items)
     }; // lock dropped here
@@ -326,9 +375,6 @@ pub async fn download_results(
     let results_dir = get_results_dir(&app)?;
     let now = chrono::Utc::now().to_rfc3339();
 
-    let mut completed = 0i32;
-    let mut failed = 0i32;
-
     // Parse results and save images (all DB access scoped)
     for line in result_text.lines() {
         if line.trim().is_empty() {
@@ -349,7 +395,6 @@ pub async fn download_results(
                 params![error, now, key],
             )
             .map_err(|e| e.to_string())?;
-            failed += 1;
         } else if let Some(candidates) = parsed["response"]["candidates"].as_array() {
             let mut saved = false;
             for candidate in candidates {
@@ -385,7 +430,6 @@ pub async fn download_results(
                                 .map_err(|e| e.to_string())?;
                             }
 
-                            completed += 1;
                             saved = true;
                             break;
                         }
@@ -403,12 +447,27 @@ pub async fn download_results(
                     params![now, key],
                 )
                 .map_err(|e| e.to_string())?;
-                failed += 1;
             }
         }
     }
 
-    // Update job status
+    // Source counts from the DB so retries don't clobber prior success
+    // counts with only the retry-batch deltas. Per-item UPDATEs above
+    // have already written the authoritative status for each row.
+    let (completed, failed): (i32, i32) = {
+        let db = get_db(&app);
+        let conn = db.conn.lock().map_err(|e| e.to_string())?;
+        conn.query_row(
+            "SELECT
+               COALESCE(SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END), 0),
+               COALESCE(SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END), 0)
+             FROM job_items WHERE job_id = ?1",
+            params![job_id],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .map_err(|e| e.to_string())?
+    };
+
     let final_status = if failed > 0 && completed == 0 {
         "failed"
     } else {

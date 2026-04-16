@@ -207,6 +207,92 @@ mod tests {
         .unwrap();
     }
 
+    fn seed_item(conn: &Connection, id: &str, job_id: &str, status: &str) {
+        conn.execute(
+            "INSERT INTO job_items (id, job_id, status) VALUES (?1, ?2, ?3)",
+            params![id, job_id, status],
+        )
+        .unwrap();
+    }
+
+    fn setup_with_items() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        super::run_migrations(&conn).unwrap();
+        conn
+    }
+
+    #[test]
+    fn retry_filter_selects_only_pending_after_reset() {
+        let conn = setup_with_items();
+        seed_job(&conn, "job1", "failed");
+        seed_item(&conn, "i_done", "job1", "completed");
+        seed_item(&conn, "i_bad", "job1", "failed");
+        seed_item(&conn, "i_new", "job1", "pending");
+
+        // Reset failed -> pending (what submit_batch does on retry)
+        let now = "2026-04-16T00:00:00Z";
+        conn.execute(
+            "UPDATE job_items SET status = 'pending', error = NULL, updated_at = ?1
+             WHERE job_id = ?2 AND status = 'failed'",
+            params![now, "job1"],
+        )
+        .unwrap();
+
+        // The retry submit query should match only non-completed items.
+        let mut stmt = conn
+            .prepare(
+                "SELECT id FROM job_items WHERE job_id = ?1 AND status = 'pending' ORDER BY id",
+            )
+            .unwrap();
+        let ids: Vec<String> = stmt
+            .query_map(params!["job1"], |row| row.get::<_, String>(0))
+            .unwrap()
+            .map(Result::unwrap)
+            .collect();
+
+        assert_eq!(ids, vec!["i_bad".to_string(), "i_new".to_string()]);
+    }
+
+    #[test]
+    fn count_aggregate_reflects_full_job_not_just_retry_batch() {
+        let conn = setup_with_items();
+        seed_job(&conn, "job1", "downloading");
+        seed_item(&conn, "i_done_prev", "job1", "completed");
+        seed_item(&conn, "i_done_now", "job1", "completed");
+        seed_item(&conn, "i_bad_now", "job1", "failed");
+
+        let (completed, failed): (i32, i32) = conn
+            .query_row(
+                "SELECT
+                   COALESCE(SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END), 0),
+                   COALESCE(SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END), 0)
+                 FROM job_items WHERE job_id = ?1",
+                params!["job1"],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .unwrap();
+
+        assert_eq!(completed, 2, "prior completions must survive aggregation");
+        assert_eq!(failed, 1);
+    }
+
+    #[test]
+    fn retry_with_no_pending_items_returns_empty_set() {
+        let conn = setup_with_items();
+        seed_job(&conn, "job1", "completed");
+        seed_item(&conn, "i_done", "job1", "completed");
+
+        let mut stmt = conn
+            .prepare("SELECT id FROM job_items WHERE job_id = ?1 AND status = 'pending'")
+            .unwrap();
+        let count = stmt
+            .query_map(params!["job1"], |row| row.get::<_, String>(0))
+            .unwrap()
+            .count();
+
+        assert_eq!(count, 0, "submit_batch should bail with 'Nothing to submit'");
+    }
+
     fn setup() -> Connection {
         let conn = Connection::open_in_memory().unwrap();
         conn.execute_batch(
