@@ -4,6 +4,7 @@
   import { onMount } from 'svelte';
   import { theme } from '$lib/stores/theme';
   import { Tooltip } from 'bits-ui';
+  import { Toaster } from '$lib/components/ui';
 
   let { children } = $props();
 
@@ -21,4 +22,5 @@
   <div class="min-h-screen">
     {@render children()}
   </div>
+  <Toaster />
 </Tooltip.Provider>

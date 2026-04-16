@@ -5,6 +5,7 @@
   import { open } from '@tauri-apps/plugin-dialog';
   import { getCurrentWebview } from '@tauri-apps/api/webview';
   import { uploadImages } from '$lib/utils/commands';
+  import { toastError } from '$lib/stores/toasts';
   import type { UploadedFile } from '$lib/types';
 
   interface Props {
@@ -46,8 +47,13 @@
     const remaining = 20 - files.length;
     const toUpload = imagePaths.slice(0, remaining);
     if (toUpload.length > 0) {
-      const uploaded = await uploadImages(toUpload);
-      onfilesadded(uploaded);
+      try {
+        const uploaded = await uploadImages(toUpload);
+        onfilesadded(uploaded);
+      } catch (err) {
+        console.error('Upload failed:', err);
+        toastError(err, 'Image upload failed');
+      }
     }
   }
 
@@ -60,8 +66,13 @@
       const remaining = 20 - files.length;
       const toUpload = paths.slice(0, remaining);
       if (toUpload.length > 0) {
-        const uploaded = await uploadImages(toUpload);
-        onfilesadded(uploaded);
+        try {
+          const uploaded = await uploadImages(toUpload);
+          onfilesadded(uploaded);
+        } catch (err) {
+          console.error('Upload failed:', err);
+          toastError(err, 'Image upload failed');
+        }
       }
     }
   }

@@ -12,6 +12,7 @@
   import { settings } from '$lib/stores/settings';
   import { mockMode } from '$lib/utils/mock-mode';
   import { createMockJobs } from '$lib/utils/mock-data';
+  import { toastError } from '$lib/stores/toasts';
   import type { Job, JobMode, UploadedFile, OutputSize, AspectRatio } from '$lib/types';
   let mode: JobMode = $state('text-to-image');
   let prompts: string[] = $state([]);
@@ -61,6 +62,7 @@
     jobs.addJob(result.job);
     invoke('submit_batch', { jobId: result.job.id }).catch((err) => {
       console.error('Failed to submit batch:', err);
+      toastError(err, 'Failed to submit batch');
       jobs.updateJob({ ...result.job, status: 'failed' });
     });
   }
@@ -94,6 +96,7 @@
       }
     } catch (err) {
       console.error('Failed to submit job:', err);
+      toastError(err, 'Failed to submit job');
     } finally {
       submitting = false;
     }

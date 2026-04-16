@@ -12,6 +12,7 @@
   import type { Job, JobItem } from '$lib/types';
   import { isActiveJob } from '$lib/utils/jobs';
   import { celebrateBatchComplete } from '$lib/utils/confetti';
+  import { toastError } from '$lib/stores/toasts';
   interface Props {
     job: Job;
   }
@@ -56,9 +57,15 @@
       setTimeout(() => { confirmDelete = false; }, 3000);
       return;
     }
-    await deleteJob(job.id);
-    jobs.removeJob(job.id);
-    confirmDelete = false;
+    try {
+      await deleteJob(job.id);
+      jobs.removeJob(job.id);
+    } catch (err) {
+      console.error('Failed to delete job:', err);
+      toastError(err, 'Failed to delete job');
+    } finally {
+      confirmDelete = false;
+    }
   }
 
   let copied = $state(false);
@@ -82,8 +89,13 @@
   }
 
   async function handleRetry() {
-    await retryJob(job.id);
-    jobs.updateJob({ ...job, status: 'processing' });
+    try {
+      await retryJob(job.id);
+      jobs.updateJob({ ...job, status: 'processing' });
+    } catch (err) {
+      console.error('Failed to retry job:', err);
+      toastError(err, 'Failed to retry job');
+    }
   }
 </script>
 
