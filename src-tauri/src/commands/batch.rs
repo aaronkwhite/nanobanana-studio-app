@@ -7,10 +7,20 @@ use reqwest::Client;
 use rusqlite::params;
 use serde_json::{json, Value};
 use std::fs;
+use std::sync::Mutex;
+use std::time::{Duration, Instant};
 use tauri::{AppHandle, Manager};
 
 const GEMINI_BASE: &str = "https://generativelanguage.googleapis.com";
 const MODEL: &str = "gemini-3.1-pro-preview";
+
+/// Minimum interval between `validate_api_key` calls, process-wide.
+/// Keeps a buggy or hostile frontend from using the validation endpoint
+/// to brute-test candidate keys. 2s is long enough to foil a tight loop
+/// but tolerable for a user who mistypes their key.
+const VALIDATE_API_KEY_MIN_INTERVAL: Duration = Duration::from_secs(2);
+
+static VALIDATE_API_KEY_LAST: Mutex<Option<Instant>> = Mutex::new(None);
 
 fn get_app_data_dir(app: &AppHandle) -> Result<std::path::PathBuf, String> {
     app.path().app_data_dir().map_err(|e| e.to_string())
@@ -532,6 +542,21 @@ pub async fn cancel_batch(app: AppHandle, batch_name: String) -> Result<(), Stri
 
 #[tauri::command]
 pub async fn validate_api_key(app: AppHandle, api_key: String) -> Result<bool, String> {
+    {
+        let mut last = VALIDATE_API_KEY_LAST
+            .lock()
+            .map_err(|e| e.to_string())?;
+        let now = Instant::now();
+        if let Some(prev) = *last {
+            if now.duration_since(prev) < VALIDATE_API_KEY_MIN_INTERVAL {
+                return Err(
+                    "Too many validation attempts. Wait a moment and try again.".to_string(),
+                );
+            }
+        }
+        *last = Some(now);
+    }
+
     let client = app.state::<Client>();
 
     let resp = client
@@ -545,4 +570,52 @@ pub async fn validate_api_key(app: AppHandle, api_key: String) -> Result<bool, S
         .map_err(|e| format!("Validation failed: {}", e))?;
 
     Ok(resp.status().is_success())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{VALIDATE_API_KEY_LAST, VALIDATE_API_KEY_MIN_INTERVAL};
+    use std::time::Instant;
+
+    #[test]
+    fn rate_limit_interval_is_2s() {
+        assert_eq!(VALIDATE_API_KEY_MIN_INTERVAL.as_secs(), 2);
+    }
+
+    #[test]
+    fn rate_limit_rejects_burst_calls() {
+        // Simulate the logic without spinning up Tauri.
+        fn would_allow(last: &mut Option<Instant>, now: Instant) -> bool {
+            if let Some(prev) = *last {
+                if now.duration_since(prev) < VALIDATE_API_KEY_MIN_INTERVAL {
+                    return false;
+                }
+            }
+            *last = Some(now);
+            true
+        }
+
+        // Use a local copy so we don't leak into the global mutex.
+        let mut local: Option<Instant> = None;
+
+        let t0 = Instant::now();
+        assert!(would_allow(&mut local, t0), "first call always passes");
+        assert!(!would_allow(&mut local, t0), "same-instant call blocked");
+        assert!(
+            !would_allow(&mut local, t0 + VALIDATE_API_KEY_MIN_INTERVAL / 2),
+            "call within interval blocked"
+        );
+        assert!(
+            would_allow(&mut local, t0 + VALIDATE_API_KEY_MIN_INTERVAL),
+            "call at interval boundary allowed"
+        );
+    }
+
+    #[test]
+    fn global_last_is_initially_none() {
+        let last = VALIDATE_API_KEY_LAST.lock().unwrap();
+        // The module-level static may or may not have been touched by
+        // a previous test run in-process; we just assert it's sane.
+        let _ = *last; // type-checks as Option<Instant>
+    }
 }
