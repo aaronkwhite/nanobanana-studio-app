@@ -6,14 +6,13 @@
   import { Textarea } from '$lib/components/ui';
   import { jobs } from '$lib/stores/jobs';
   import { config } from '$lib/stores/config';
-  import { createT2IJob, createI2IJob } from '$lib/utils/commands';
-  import { invoke } from '@tauri-apps/api/core';
   import { dev } from '$app/environment';
   import { settings } from '$lib/stores/settings';
   import { mockMode } from '$lib/utils/mock-mode';
   import { createMockJobs } from '$lib/utils/mock-data';
   import { toastError } from '$lib/stores/toasts';
-  import type { Job, JobMode, UploadedFile, OutputSize, AspectRatio } from '$lib/types';
+  import { submitJob } from '$lib/utils/submit';
+  import type { JobMode, UploadedFile, OutputSize, AspectRatio } from '$lib/types';
   let mode: JobMode = $state('text-to-image');
   let prompts: string[] = $state([]);
   let i2iFiles: UploadedFile[] = $state([]);
@@ -58,39 +57,23 @@
     return () => jobs.stopPolling();
   });
 
-  function submitAndTrack(result: { job: Job }) {
-    jobs.addJob(result.job);
-    invoke('submit_batch', { jobId: result.job.id }).catch((err) => {
-      console.error('Failed to submit batch:', err);
-      toastError(err, 'Failed to submit batch');
-      jobs.updateJob({ ...result.job, status: 'failed' });
-    });
-  }
-
   async function handleSubmit() {
     if (submitting) return;
     submitting = true;
 
     try {
-
+      await submitJob({
+        mode,
+        prompts,
+        i2iPrompt,
+        i2iFiles,
+        output_size: outputSize,
+        aspect_ratio: aspectRatio,
+        temperature,
+      });
       if (mode === 'text-to-image') {
-        const result = await createT2IJob({
-          prompts,
-          output_size: outputSize,
-          temperature,
-          aspect_ratio: aspectRatio,
-        });
-        submitAndTrack(result);
         prompts = [];
       } else {
-        const result = await createI2IJob({
-          prompt: i2iPrompt,
-          image_paths: i2iFiles.map((f) => f.path),
-          output_size: outputSize,
-          temperature,
-          aspect_ratio: aspectRatio,
-        });
-        submitAndTrack(result);
         i2iFiles = [];
         i2iPrompt = '';
       }
