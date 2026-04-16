@@ -2,9 +2,12 @@
 import '@testing-library/jest-dom/vitest';
 import { vi } from 'vitest';
 
-// Mock SvelteKit environment
+// Mock SvelteKit environment. Default to production-like (dev: false)
+// so mock-mode stays disabled in component tests. Tests that need
+// dev behavior override via vi.doMock + vi.resetModules.
 vi.mock('$app/environment', () => ({
   browser: true,
+  dev: false,
 }));
 
 // Mock Tauri API

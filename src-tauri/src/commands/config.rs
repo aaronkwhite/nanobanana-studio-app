@@ -63,8 +63,19 @@ pub fn delete_config(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+const ALLOWED_SETTING_KEYS: &[&str] = &[
+    "default_output_size",
+    "default_aspect_ratio",
+    "default_temperature",
+    "results_dir",
+    "uploads_dir",
+];
+
 #[tauri::command]
 pub fn get_setting(app: AppHandle, key: String) -> Result<Option<String>, String> {
+    if !ALLOWED_SETTING_KEYS.contains(&key.as_str()) {
+        return Err(format!("Setting key '{}' is not allowed", key));
+    }
     let db = get_db(&app);
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
     let value = conn
@@ -76,14 +87,6 @@ pub fn get_setting(app: AppHandle, key: String) -> Result<Option<String>, String
         .ok();
     Ok(value)
 }
-
-const ALLOWED_SETTING_KEYS: &[&str] = &[
-    "default_output_size",
-    "default_aspect_ratio",
-    "default_temperature",
-    "results_dir",
-    "uploads_dir",
-];
 
 #[tauri::command]
 pub fn save_setting(app: AppHandle, key: String, value: String) -> Result<(), String> {
@@ -113,6 +116,7 @@ pub fn get_all_settings(app: AppHandle) -> Result<HashMap<String, String>, Strin
         })
         .map_err(|e| e.to_string())?
         .filter_map(|r| r.ok())
+        .filter(|(k, _): &(String, String)| ALLOWED_SETTING_KEYS.contains(&k.as_str()))
         .collect();
     Ok(map)
 }
@@ -148,6 +152,22 @@ mod tests {
         assert!(!ALLOWED_SETTING_KEYS.contains(&"password"));
         assert!(!ALLOWED_SETTING_KEYS.contains(&""));
         assert!(!ALLOWED_SETTING_KEYS.contains(&"DROP TABLE config"));
+    }
+
+    #[test]
+    fn test_get_all_settings_filter_excludes_api_key() {
+        let rows = vec![
+            ("gemini_api_key".to_string(), "secret".to_string()),
+            ("default_output_size".to_string(), "2K".to_string()),
+            ("unknown".to_string(), "x".to_string()),
+        ];
+        let filtered: HashMap<String, String> = rows
+            .into_iter()
+            .filter(|(k, _)| ALLOWED_SETTING_KEYS.contains(&k.as_str()))
+            .collect();
+        assert!(!filtered.contains_key("gemini_api_key"));
+        assert!(!filtered.contains_key("unknown"));
+        assert_eq!(filtered.get("default_output_size"), Some(&"2K".to_string()));
     }
 
     #[test]
