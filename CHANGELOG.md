@@ -1,5 +1,52 @@
 # Changelog
 
+## [0.4.4] - 2026-04-16
+
+### Security
+
+- **API key exfiltration closed** — `get_setting` and `get_all_settings` now enforce `ALLOWED_SETTING_KEYS`. Previously the allowlist only gated writes, so `invoke('get_setting', { key: 'gemini_api_key' })` returned the unmasked key, undoing the masking in `get_config`.
+- **Mock mode gated to dev** — production now ignores a stale or spoofed `nanobanana-mock-mode` localStorage value and no-ops `toggle`/`enable`/`disable` outside dev. Prior builds could surface fake jobs with no API calls if the flag ever got set.
+- **Tauri capability surface tightened** — dropped unused `fs:default` and `fs:scope` (`$HOME/**`) permissions. The frontend never uses `tauri-plugin-fs` directly; all file I/O flows through Rust commands.
+
+### Correctness & Reliability
+
+- **Transactions around multi-row inserts** — `create_t2i_job`, `create_i2i_job`, and `delete_job` now wrap their multi-row writes in `conn.transaction()`. A mid-insert crash can no longer leave a job with `total_items` greater than the number of `job_items` rows.
+- **I2I uploads directory check fixed on macOS** — `get_uploads_dir` now returns a canonicalized path, so the `starts_with` check in `create_i2i_job` works against canonicalized input paths (previously `/var` vs `/private/var` made every I2I job fail the uploads-directory check).
+- **CAS guard on download_results** — flips `jobs.status` `processing` → `downloading` atomically at entry. Concurrent poll ticks, or a delete fired mid-download, now bail early instead of writing orphan images or racing row deletes. Startup resets any stranded `downloading` rows back to `processing` so an app kill mid-download is recoverable.
+- **Shared `reqwest::Client` with timeouts** — one client on app state with a 10s connect timeout and 600s request timeout, reused across `submit_batch`, `poll_batch`, `download_results`, `cancel_batch`, and `validate_api_key`. A stalled Gemini endpoint can no longer wedge a command indefinitely.
+- **Gemini per-item error parsing fixed** — Gemini returns errors as `{code, message, status}` objects, not strings. `parsed["error"].as_str()` was always `None`, so real per-item errors fell through and surfaced as "No image in response".
+- **Settings persistence awaited** — `settings.update()` now awaits the DB writes and rolls back the store on failure, so the UI no longer diverges from the persisted state silently.
+- **Poll failure backoff** — `pollActiveJobs` now backs off exponentially (2s → 4s → 8s → 16s → 30s cap) on consecutive failures and resets on success. A network outage no longer produces a hot 2s loop of failing IPCs.
+
+### UI
+
+- **Toast primitive** — new `$lib/stores/toasts` + `<Toaster />` component. Wired into submit, retry, delete, and upload flows. Previously a failed command just logged to console; the user now sees an error toast with the underlying message.
+
+### Database
+
+- **`PRAGMA user_version` migration ladder** — `db::run_migrations` replaces the bare `CREATE TABLE IF NOT EXISTS` batch. Groundwork for the KIE commercialization work that will add new columns.
+
+### Polish
+
+- Error messages for missing files no longer leak full filesystem paths (filename only).
+- `<svelte:component>` replaced with the dynamic-component form — `svelte-check` now reports 0 warnings.
+- `Math.random()` fallback IDs in `Input`/`Textarea` replaced with a monotonic module counter (`$lib/utils/dom-id`).
+- `get_jobs` now rejects unknown `status` filters instead of silently returning all jobs.
+- `setJobs` renamed to `loadMocks` and gated to dev — production can no longer hot-swap the store contents.
+- `any` casts in `settings.load` replaced with `asOutputSize`/`asAspectRatio` validators.
+- Unused `Dialog` component deleted.
+- Idiomatic `base64` import in `files.rs`.
+
+### Test Coverage
+
+- **88 total tests** (24 Rust + 64 frontend) — up from 57 (15 Rust + 42 frontend)
+- **Rust**: CAS semantics, crash recovery, migration idempotency + legacy upgrade, `get_all_settings` filter
+- **Frontend**: mock-mode dev/prod, toasts primitive, settings rollback + literal validation, jobs polling behavior with fake timers, `loadMocks` dev-gating, `updateJob`/`removeJob` coverage
+
+### Internal
+
+- **Main-branch code review** — added `docs/reviews/2026-04-16-main-audit.md` with prioritized findings (Critical/High/Medium/Low). This release addresses 22 of the 23 items flagged; the keychain migration is deferred to the KIE commercialization branch where the direct-Gemini auth path is being replaced with a backend-issued bearer token.
+
 ## [0.4.3] - 2026-03-23
 
 ### Fixes

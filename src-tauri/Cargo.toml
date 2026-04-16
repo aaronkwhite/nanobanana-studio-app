@@ -1,6 +1,6 @@
 [package]
 name = "nanobanana-studio"
-version = "0.4.3"
+version = "0.4.4"
 description = "Nana Studio - Batch Media Generation with Gemini"
 authors = ["Aaron K. White"]
 license = "MIT"

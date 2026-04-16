@@ -70,14 +70,15 @@ npm run check
 
 ## Testing
 
-**Frontend (Vitest):** 42 tests across 10 files
-- Stores: settings, config, jobs, theme
-- Utilities: options, isActiveJob
+**Frontend (Vitest):** 64 tests across 12 files
+- Stores: settings (incl. rollback + literal validation), config, jobs (fake-timer polling, loadMocks dev-gate, update/remove), theme, toasts
+- Utilities: options, isActiveJob, mock-mode (dev/prod gating)
 - Components: Header, JobCard, Button
 - Types: constants, calculateCost
 
-**Backend (Rust):** 15 tests
-- Security: save_setting key allowlist, batch name validation (SSRF/path traversal)
+**Backend (Rust):** 24 tests
+- Security: `save_setting` key allowlist, `get_setting` allowlist (0.4.4), `get_all_settings` filter (0.4.4), batch name validation (SSRF/path traversal)
+- Database: CAS guard semantics, crash recovery for stranded downloads, migration ladder (fresh / idempotent / preserves data / legacy upgrade)
 - Pure functions: MIME type mapping, API key masking
 
 ## Tech Stack
@@ -104,7 +105,7 @@ src/                          # SvelteKit frontend
       ui/                     # Design system primitives (Button, Select, Tabs, etc.)
     stores/                   # Svelte stores (settings, config, jobs, theme)
     types/                    # TypeScript types matching Rust structs
-    utils/                    # Utilities (commands, options, jobs, mock-mode)
+    utils/                    # Utilities (commands, options, jobs, mock-mode, dom-id)
   routes/                     # Pages (+page.svelte, settings/+page.svelte)
   app.css                     # Design tokens and glass utilities
 src-tauri/                    # Rust backend
@@ -112,11 +113,19 @@ src-tauri/                    # Rust backend
     commands/                 # Tauri IPC commands (config, jobs, files, batch)
     paths.rs                  # Shared path resolution, API key, MIME, validation
     models.rs                 # Data structures (Job, JobItem, etc.)
-    db.rs                     # SQLite database initialization
+    db.rs                     # SQLite init, migration ladder, CAS helpers
     lib.rs                    # Tauri app setup and command registration
 static/
   images/                     # Logo SVGs (mark, full, inverse)
+docs/
+  reviews/                    # Periodic code review audits
+  planning/                   # Design notes and roadmaps
+  design-system.md            # Cross-project Tauri + SvelteKit design reference
 ```
+
+## Supporting
+
+If Nana Studio saves you time, you can [buy me a coffee](https://www.buymeacoffee.com/aaronkwhite).
 
 ## License
 
