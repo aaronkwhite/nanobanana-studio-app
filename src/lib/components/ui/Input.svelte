@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { HTMLInputAttributes } from 'svelte/elements';
+  import { nextDomId } from '$lib/utils/dom-id';
 
   interface Props extends HTMLInputAttributes {
     label?: string;
@@ -7,7 +8,7 @@
   }
 
   let { label, error, class: className = '', value = $bindable(''), id, ...rest }: Props = $props();
-  const fallbackId = `input-${Math.random().toString(36).slice(2, 9)}`;
+  const fallbackId = nextDomId('input');
   const inputId = $derived(id ?? fallbackId);
 </script>
 

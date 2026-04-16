@@ -72,7 +72,13 @@ pub async fn submit_batch(app: AppHandle, job_id: String) -> Result<(), String> 
         // For I2I, add image data
         if mode == "image-to-image" {
             if let Some(img_path) = item_image_path {
-                let img_data = fs::read(img_path).map_err(|e| format!("Failed to read image: {}", e))?;
+                let img_data = fs::read(img_path).map_err(|_| {
+                    let name = std::path::Path::new(img_path)
+                        .file_name()
+                        .map(|n| n.to_string_lossy().to_string())
+                        .unwrap_or_else(|| "(invalid)".to_string());
+                    format!("Failed to read image: {}", name)
+                })?;
                 let b64 = base64::engine::general_purpose::STANDARD.encode(&img_data);
                 let ext = std::path::Path::new(img_path)
                     .extension()

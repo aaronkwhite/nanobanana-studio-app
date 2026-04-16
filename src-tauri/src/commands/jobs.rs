@@ -16,11 +16,14 @@ pub fn get_jobs(app: AppHandle, status: Option<String>) -> Result<Vec<Job>, Stri
                     created_at, updated_at
              FROM jobs WHERE status IN ('pending', 'processing') ORDER BY created_at DESC"
         }
-        _ => {
+        None | Some("all") => {
             "SELECT id, status, mode, prompt, output_size, temperature, aspect_ratio,
                     batch_job_name, batch_temp_file, total_items, completed_items, failed_items,
                     created_at, updated_at
              FROM jobs ORDER BY created_at DESC"
+        }
+        Some(other) => {
+            return Err(format!("Unknown status filter: '{}'. Use 'active' or 'all'.", other));
         }
     };
 

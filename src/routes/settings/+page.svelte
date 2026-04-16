@@ -246,11 +246,12 @@
             { value: 'dark' as Theme, label: 'Dark', icon: Moon, desc: 'Easy on the eyes' },
             { value: 'system' as Theme, label: 'System', icon: Monitor, desc: 'Match your OS' },
           ] as opt}
+            {@const Icon = opt.icon}
             <button
               onclick={() => theme.set(opt.value)}
               class="flex flex-col items-center gap-2 rounded-[var(--radius-lg)] border p-4 transition-colors {$theme === opt.value ? 'border-[var(--accent)] bg-[var(--accent-subtle)]' : 'border-[var(--border)] bg-[var(--surface)] hover:border-[rgba(148,163,184,0.5)]'}"
             >
-              <svelte:component this={opt.icon} size={20} class={$theme === opt.value ? 'text-[var(--accent)]' : 'text-[var(--muted)]'} />
+              <Icon size={20} class={$theme === opt.value ? 'text-[var(--accent)]' : 'text-[var(--muted)]'} />
               <span class="text-sm font-medium text-[var(--text)]">{opt.label}</span>
               <span class="text-xs text-[var(--muted)]">{opt.desc}</span>
             </button>

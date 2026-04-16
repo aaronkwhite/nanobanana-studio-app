@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { HTMLTextareaAttributes } from 'svelte/elements';
+  import { nextDomId } from '$lib/utils/dom-id';
 
   interface Props extends HTMLTextareaAttributes {
     label?: string;
@@ -10,7 +11,7 @@
 
   let { label, error, autoResize = false, maxLength, class: className = '', value = $bindable(''), id, ...rest }: Props = $props();
 
-  const fallbackId = `textarea-${Math.random().toString(36).slice(2, 9)}`;
+  const fallbackId = nextDomId('textarea');
   const textareaId = $derived(id ?? fallbackId);
   let textareaEl: HTMLTextAreaElement | undefined = $state();
 

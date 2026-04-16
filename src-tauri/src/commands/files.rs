@@ -1,3 +1,4 @@
+use base64::{engine::general_purpose::STANDARD, Engine};
 use crate::models::UploadedFile;
 use crate::paths::{get_uploads_dir, get_results_dir, mime_from_ext};
 use std::path::PathBuf;
@@ -21,9 +22,14 @@ pub fn upload_images(app: AppHandle, files: Vec<String>) -> Result<Vec<UploadedF
     for file_path in files {
         let path = PathBuf::from(&file_path);
 
-        // Validate file exists
+        // Validate file exists. Surface only the filename, not the full
+        // path, to avoid leaking filesystem structure to the UI / logs.
         if !path.exists() {
-            return Err(format!("File not found: {}", file_path));
+            let name = path
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_else(|| "(invalid)".to_string());
+            return Err(format!("File not found: {}", name));
         }
 
         // Validate extension
@@ -76,7 +82,11 @@ pub fn get_image(app: AppHandle, path: String) -> Result<String, String> {
     let path = PathBuf::from(&path);
 
     if !path.exists() {
-        return Err(format!("Image not found: {}", path.display()));
+        let name = path
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_else(|| "(invalid)".to_string());
+        return Err(format!("Image not found: {}", name));
     }
 
     // Validate path is within allowed directories (default + custom configured)
@@ -106,7 +116,7 @@ pub fn get_image(app: AppHandle, path: String) -> Result<String, String> {
 
     // Read file and encode as base64
     let data = std::fs::read(&path).map_err(|e| e.to_string())?;
-    let base64 = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &data);
+    let base64 = STANDARD.encode(&data);
 
     // Determine mime type
     let ext = path
