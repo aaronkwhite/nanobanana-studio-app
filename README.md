@@ -70,15 +70,15 @@ npm run check
 
 ## Testing
 
-**Frontend (Vitest):** 64 tests across 12 files
-- Stores: settings (incl. rollback + literal validation), config, jobs (fake-timer polling, loadMocks dev-gate, update/remove), theme, toasts
-- Utilities: options, isActiveJob, mock-mode (dev/prod gating)
-- Components: Header, JobCard, Button
+**Frontend (Vitest):** 77 tests across 13 files
+- Stores: settings (rollback + literal validation), config, jobs (fake-timer polling, loadMocks dev-gate, update/remove), theme, toasts
+- Utilities: options, isActiveJob, mock-mode (dev/prod gating), submit (T2I/I2I routing, failure paths)
+- Components: Header, JobCard (retry, delete confirm, copy), Button
 - Types: constants, calculateCost
 
-**Backend (Rust):** 24 tests
-- Security: `save_setting` key allowlist, `get_setting` allowlist (0.4.4), `get_all_settings` filter (0.4.4), batch name validation (SSRF/path traversal)
-- Database: CAS guard semantics, crash recovery for stranded downloads, migration ladder (fresh / idempotent / preserves data / legacy upgrade)
+**Backend (Rust):** 30 tests
+- Security: `save_setting` / `get_setting` / `get_all_settings` allowlist filtering, `validate_api_key` rate limit, batch name validation (SSRF/path traversal)
+- Database: CAS guard semantics, crash recovery for stranded downloads, migration ladder (fresh / idempotent / preserves data / legacy upgrade), retry-path item filtering, count aggregation that survives retries
 - Pure functions: MIME type mapping, API key masking
 
 ## Tech Stack

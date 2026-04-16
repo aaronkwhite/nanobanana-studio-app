@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.4.5] - 2026-04-16
+
+### Fixes
+
+- **Retry path now retries only failed items** — `retryJob` → `submit_batch` previously read every item from the job and resubmitted them, so a retry double-billed Gemini for items that had already succeeded, and `download_results` then clobbered the original success counts with the retry batch's deltas. Now `submit_batch` runs a transaction that resets failed items back to pending, zeroes out `jobs.failed_items`, and reads only `pending` items for the JSONL. `download_results` aggregates the final counts from `job_items` directly so prior successes survive the retry. Rejects retries while the job is already `processing` or `downloading`.
+- **`validate_api_key` rate-limited** — process-wide 2-second minimum between calls guards against a buggy or hostile frontend brute-testing candidate keys.
+- **Release-build file logging** — packaged builds now log Warn-level to `$APPDATA/logs` with a 2 MiB rotating cap. Debug builds still stream Info to stdout and the webview console.
+
+### Refactor
+
+- **`submitJob` / `submitAndTrack` extracted to `$lib/utils/submit`** — the mode-routing, batch dispatch, and failure-handling logic left `+page.svelte` and became unit-testable. Route component shrinks to a thin input-gathering layer.
+
+### Tests
+
+- **107 total tests** (30 Rust + 77 frontend) — up from 88 (24 Rust + 64 frontend)
+- **Rust**: retry filter selects only pending after reset (0.4.5), count aggregate preserves prior success (0.4.5), retry bails cleanly when nothing to submit (0.4.5), validate_api_key rate-limit burst rejection and interval boundary (0.4.5)
+- **Frontend**: submit routing for T2I/I2I with correct payload shape, submitAndTrack success + failure paths, JobCard retry success + toast-on-failure, JobCard delete confirm two-click flow + failure toast, JobCard copy-prompt
+
 ## [0.4.4] - 2026-04-16
 
 ### Security
